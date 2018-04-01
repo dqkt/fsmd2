@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Logger</string>
+    <string name="main_title">Shipment Monitor</string>
+    <string name="action_settings">Settings</string>
+    <string name="no_items_found">No items added.\n\nAdd items either by hand, by scanning QR codes, or by letting the phone detect them on its hotspot.</string>
+    <string name="no_data_found">No data logged.\n\nData is automatically added when there\'s a stable connection to the tracking device on the item.</string>
+    <string name="add_item_manually_info">Add an item by entering its name and the IP address of the tracking device attached to it. The item will be added if the entered IP address is valid.</string>
+    <string name="add_item_with_qr_code_info">Add an item by scanning its QR code, which will automatically fill in some information about it. You may still need to provide the tracking device\'s IP address.</string>
+    <string name="add_item_with_phone_detect_info">Add items by allowing your phone to look through the list of devices connected to its hotspot. Ensure that your mobile hotspot is turned on.</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+    <string name="lost_status">LOST</string>
+    <string name="vibrating_status">VIB.</string>
+    <string name="safe_status">SAFE</string>
+    <string name="search_items_hint">Search name or IP address</string>
+    <string name="cancel_delete">Cancel</string>
+</resources>

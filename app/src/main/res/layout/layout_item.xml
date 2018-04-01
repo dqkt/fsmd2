@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:elevation="1dp"
+    android:clickable="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:padding="12dp"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?android:attr/selectableItemBackground"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/layout_info">
+
+        <RelativeLayout
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_gravity="center"
+            android:layout_margin="0dp"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="5"
+            android:id="@+id/layout_status">
+
+            <View
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:layout_margin="0dp"
+                android:layout_height="30dp"
+                android:layout_width="30dp"
+                android:background="@drawable/rectangle"
+                android:id="@+id/view_status" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:paddingLeft="10dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="23">
+
+            <TextView
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textSize="18sp"
+                android:textColor="@android:color/black"
+                android:fontFamily="sans-serif-light"
+                android:textStyle="bold"
+                android:layout_height="0dp"
+                android:layout_width="match_parent"
+                android:layout_weight="4"
+                android:id="@+id/textview_name" />
+
+            <TextView
+                android:singleLine="true"
+                android:textSize="14sp"
+                android:textColor="@drawable/secondary_text_color"
+                android:fontFamily="sans-serif"
+                android:layout_height="0dp"
+                android:layout_width="match_parent"
+                android:layout_weight="3"
+                android:id="@+id/textview_ip" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_gravity="center"
+            android:textAlignment="center"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="12">
+
+            <TextView
+                android:gravity="center"
+                android:textSize="14sp"
+                android:textColor="@drawable/secondary_text_color"
+                android:fontFamily="sans-serif-light"
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:id="@+id/textview_date_added" />
+        </RelativeLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:id="@+id/layout_swipe_item"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:orientation="horizontal"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="8"
+            android:padding="11dp"
+            android:textColor="@color/backgroundTextColorDark"
+            android:textAllCaps="true"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:id="@+id/textview_delete_description"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:padding="11dp"
+            android:gravity="end|center_vertical"
+            android:text="@string/cancel_delete"
+            android:textColor="@color/colorPrimaryDark"
+            android:textAllCaps="true"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:id="@+id/textview_cancel"/>
+
+    </LinearLayout>
+
+</FrameLayout>

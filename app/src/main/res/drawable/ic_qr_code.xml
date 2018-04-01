@@ -1,0 +1,21 @@
+<vector android:height="24dp" android:viewportHeight="16000.0"
+    android:viewportWidth="16000.0" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#FF000000"
+        android:pathData="M1760,11515l0,-2865 2860,0 2860,0 0,2865 0,2865 -2860,0 -2860,0 0,-2865zM6320,11510l0,-1700 -1700,0 -1700,0 0,1700 0,1700 1700,0 1700,0 0,-1700z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M4040,11515l0,-575 580,0 580,0 0,575 0,575 -580,0 -580,0 0,-575z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M8610,11515l0,-2865 1725,0 1725,0 0,575 0,575 560,0 560,0 0,-575 0,-575 580,0 580,0 0,1720 0,1720 -1720,0 -1720,0 0,-565 0,-565 -565,0 -565,0 0,1710 0,1710 -580,0 -580,0 0,-2865z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M10900,13800l0,-580 580,0 580,0 0,580 0,580 -580,0 -580,0 0,-580z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M13180,13800l0,-580 580,0 580,0 0,580 0,580 -580,0 -580,0 0,-580z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M1760,4660l0,-2860 2860,0 2860,0 0,2860 0,2860 -2860,0 -2860,0 0,-2860zM6320,4660l0,-1700 -1700,0 -1700,0 0,1700 0,1700 1700,0 1700,0 0,-1700z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M4040,4660l0,-580 580,0 580,0 0,580 0,580 -580,0 -580,0 0,-580z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M8610,4660l0,-2860 2865,0 2865,0 0,2860 0,2860 -2865,0 -2865,0 0,-2860zM13180,4660l0,-1700 -1705,0 -1705,0 0,1700 0,1700 1705,0 1705,0 0,-1700z" android:strokeColor="#FF000000"/>
+    <path android:fillColor="#FF000000"
+        android:pathData="M10900,4660l0,-580 580,0 580,0 0,580 0,580 -580,0 -580,0 0,-580z" android:strokeColor="#FF000000"/>
+</vector>

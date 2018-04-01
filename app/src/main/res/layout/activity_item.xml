@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.dq.fsmd2.ItemActivity"
+    android:id="@+id/layout_item">
+
+    <include
+        android:id="@+id/action_bar_item"
+        layout="@layout/action_bar_item" />
+
+    <RelativeLayout
+        android:background="@color/colorPrimaryDark"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="8">
+
+        <LinearLayout
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <RelativeLayout
+                android:textAlignment="center"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <TextView
+                    android:textColor="@android:color/white"
+                    android:gravity="center"
+                    android:id="@+id/textview_ip"
+                    android:textAlignment="center"
+                    android:textSize="40sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:textAlignment="center"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <TextView
+                    android:textColor="@android:color/white"
+                    android:gravity="center"
+                    android:id="@+id/textview_date_added"
+                    android:textAlignment="center"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+            </RelativeLayout>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="45">
+
+        <RelativeLayout
+            android:padding="5dp"
+            android:background="@color/backgroundColorDark"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="top"
+            android:id="@+id/view_data_area">
+
+            <TextView
+                android:layout_centerHorizontal="true"
+                android:text="@string/no_data_found"
+                android:textSize="20sp"
+                android:textAlignment="center"
+                android:textColor="@drawable/secondary_text_color"
+                android:fontFamily="sans-serif-light"
+                android:layout_marginTop="50dp"
+                android:layout_width="200dp"
+                android:layout_height="match_parent"
+                android:id="@+id/textview_no_data"/>
+
+            <android.support.v4.widget.SwipeRefreshLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/swiperefresh_data"
+
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <android.support.v7.widget.RecyclerView
+                    android:background="@drawable/rectangle"
+                    android:elevation="1dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:dividerHeight="5dp"
+                    android:divider="@android:color/transparent"
+                    android:paddingTop="5dp"
+                    android:paddingRight="5dp"
+                    android:paddingBottom="5dp"
+                    android:clipToPadding="false"
+                    android:drawSelectorOnTop="true"
+                    android:scrollbarStyle="outsideOverlay"
+                    android:smoothScrollbar="true"
+                    android:choiceMode="multipleChoice"
+                    android:id="@+id/recyclerview_item_data" />
+            </android.support.v4.widget.SwipeRefreshLayout>
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_gravity="top"
+            android:background="@drawable/shadow_down"/>
+    </FrameLayout>
+</LinearLayout>
