@@ -9,7 +9,11 @@
     android:layout_height="wrap_content">
 
     <LinearLayout
-        android:padding="12dp"
+        android:baselineAligned="false"
+        android:paddingStart="7dp"
+        android:paddingEnd="7dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:orientation="horizontal"
         android:clickable="true"
         android:focusable="true"
@@ -38,7 +42,8 @@
 
         <LinearLayout
             android:orientation="vertical"
-            android:paddingLeft="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="23">

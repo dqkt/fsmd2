@@ -2,13 +2,10 @@ package com.example.dq.fsmd2;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.view.View;
 
 public abstract class SwipeUtil extends ItemTouchHelper.SimpleCallback {
 
@@ -16,6 +13,8 @@ public abstract class SwipeUtil extends ItemTouchHelper.SimpleCallback {
 
     private boolean initiated;
     private Context context;
+
+    private boolean swipeBack;
 
     private int leftColorCode;
 
@@ -42,25 +41,12 @@ public abstract class SwipeUtil extends ItemTouchHelper.SimpleCallback {
         return super.getSwipeDirs(recyclerView, viewHolder);
     }
 
-
     @Override
-    public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
-                            float dX, float dY, int actionState, boolean isCurrentlyActive) {
-
-        View itemView = viewHolder.itemView;
-        if (!initiated) {
-            init();
+    public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+        if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+            float alpha = 1 - (Math.abs(dX) / recyclerView.getWidth());
+            viewHolder.itemView.setAlpha(alpha);
         }
-
-        ((ColorDrawable) background).setColor(getLeftColor());
-        background.setBounds(itemView.getRight() + (int) dX, itemView.getTop(), itemView.getRight(), itemView.getBottom());
-        background.draw(c);
-
-        Paint paint = new Paint();
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(48);
-        paint.setTextAlign(Paint.Align.CENTER);
-
         super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
     }
 
@@ -71,4 +57,5 @@ public abstract class SwipeUtil extends ItemTouchHelper.SimpleCallback {
     public void setLeftColor(int leftColorCode) {
         this.leftColorCode = leftColorCode;
     }
+
 }

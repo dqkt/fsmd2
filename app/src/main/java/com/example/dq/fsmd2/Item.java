@@ -16,10 +16,13 @@ public class Item implements Serializable {
     private static int numVibrating = 0;
     private static int numLost = 0;
 
-    public static int NO_STATUS        = -1;
-    public static int SAFE_STATUS      = 0;
-    public static int VIBRATING_STATUS = 1;
-    public static int LOST_STATUS      = 2;
+    public static final int NO_STATUS        = -1;
+    public static final int SAFE_STATUS      = 0;
+    public static final int VIBRATING_STATUS = 1;
+    public static final int LOST_STATUS      = 2;
+
+    public static final int LOST_THRESHOLD = 130;
+    public static final int VIB_THRESHOLD = 100;
 
     private String name;
     private String ip;
@@ -102,4 +105,26 @@ public class Item implements Serializable {
     public static int getNumVibrating() { return numVibrating; }
 
     public static int getNumLost() { return numLost; }
+
+    public static int getStatusColor(int status) {
+        switch (status) {
+            case SAFE_STATUS:
+                return R.color.safeStatusColor;
+            case VIBRATING_STATUS:
+                return R.color.vibratingStatusColor;
+            case LOST_STATUS:
+                return R.color.lostStatusColor;
+        }
+        return R.color.safeStatusColor;
+    }
+
+    public static int determineStatus(double vibLevel) {
+        if (vibLevel > LOST_THRESHOLD) {
+            return LOST_STATUS;
+        } else if (vibLevel > VIB_THRESHOLD) {
+            return VIBRATING_STATUS;
+        } else {
+            return SAFE_STATUS;
+        }
+    }
 }

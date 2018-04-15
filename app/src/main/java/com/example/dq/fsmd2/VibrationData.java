@@ -13,6 +13,9 @@ public class VibrationData {
     private double avgYVibration;
     private double avgZVibration;
 
+    private double peakVibMagnitude;
+    private double avgVibMagnitude;
+
     public VibrationData() {
         peakXVibration = 0;
         peakYVibration = 0;
@@ -29,9 +32,13 @@ public class VibrationData {
         this.peakYVibration = peakYVib;
         this.peakZVibration = peakZVib;
 
+        this.peakVibMagnitude = calculateVibrationMagnitude(peakXVib, peakYVib, peakZVib);
+
         this.avgXVibration = avgXVib;
         this.avgYVibration = avgYVib;
         this.avgZVibration = avgZVib;
+
+        this.avgVibMagnitude = calculateVibrationMagnitude(avgXVib, avgYVib, avgZVib);
     }
 
     public void setPeakXVibration(double peakXVib) { this.peakXVibration = peakXVib; }
@@ -47,4 +54,21 @@ public class VibrationData {
     public double getAvgYVibration() { return avgYVibration; }
     public void setAvgZVibration(double avgZVib) { this.avgZVibration = avgZVib; }
     public double getAvgZVibration() { return avgZVibration; }
+
+    public double getPeakVibMagnitude() {
+        return peakVibMagnitude;
+    }
+    public void setPeakVibMagnitude(double peakVibMagnitude) {
+        this.peakVibMagnitude = peakVibMagnitude;
+    }
+    public double getAvgVibMagnitude() {
+        return avgVibMagnitude;
+    }
+    public void setAvgVibMagnitude(double avgVibMagnitude) {
+        this.avgVibMagnitude = avgVibMagnitude;
+    }
+
+    public static double calculateVibrationMagnitude(double xVibration, double yVibration, double zVibration) {
+        return Math.sqrt(Math.pow(xVibration, 2) + Math.pow(yVibration, 2) + Math.pow(zVibration, 2));
+    }
 }

@@ -28,13 +28,6 @@ public class MonitorData implements Serializable
         timeData = new TimeData(date);
     }
 
-    // TODO: Implement copy constructor
-    /*
-    public MonitorData(MonitorData other) {
-
-    }
-    */
-
     public void setVibrationData(double peakXVib, double peakYVib, double peakZVib,
                                  double avgXVib, double avgYVib, double avgZVib) {
         vibData.setPeakXVibration(peakXVib);
@@ -47,7 +40,6 @@ public class MonitorData implements Serializable
     }
 
     public VibrationData getVibrationData() { return vibData; }
-
     public void setPositionData(double longitude, double latitude) {
         posData.setLongitude(longitude);
         posData.setLatitude(latitude);
@@ -58,6 +50,5 @@ public class MonitorData implements Serializable
     public void setTimeData(Date date) {
         timeData.setDate(date);
     }
-
     public TimeData getTimeData() { return timeData; }
 }

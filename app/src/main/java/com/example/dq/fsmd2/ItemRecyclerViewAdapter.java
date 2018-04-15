@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,19 +59,10 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder
             }
         });
 
-        int statusCode = currentItem.getStatus();
-
         RelativeLayout statusLayout = (RelativeLayout) holder.regularLayout.findViewById(R.id.layout_status);
         View status = statusLayout.findViewById(R.id.view_status);
         GradientDrawable statusIndicator = (GradientDrawable) status.getBackground();
-
-        if (statusCode == Item.SAFE_STATUS) {
-            statusIndicator.setColor(context.getResources().getColor(R.color.safeStatusColor));
-        } else if (statusCode == Item.VIBRATING_STATUS) {
-            statusIndicator.setColor(context.getResources().getColor(R.color.vibratingStatusColor));
-        } else if (statusCode == Item.LOST_STATUS) {
-            statusIndicator.setColor(context.getResources().getColor(R.color.lostStatusColor));
-        }
+        statusIndicator.setColor(context.getResources().getColor(Item.getStatusColor(currentItem.getStatus())));
 
         holder.name.setText(currentItem.getName());
         holder.ip.setText(currentItem.getIP());

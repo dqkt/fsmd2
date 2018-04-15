@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:fitsSystemWindows="true"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -16,51 +16,57 @@
 
     <RelativeLayout
         android:background="@color/colorPrimaryDark"
-        android:gravity="center"
-        android:textAlignment="center"
+        android:padding="15dp"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="8">
 
-        <LinearLayout
-            android:gravity="center"
+        <RelativeLayout
+            android:layout_centerVertical="true"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_alignParentStart="true"
+            android:id="@+id/layout_item_status">
+
+            <View
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:layout_height="60dp"
+                android:layout_width="60dp"
+                android:background="@drawable/rectangle"
+                android:elevation="2dp"
+                android:id="@+id/view_item_status" />
+        </RelativeLayout>
+
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@id/layout_item_status">
 
-            <RelativeLayout
-                android:textAlignment="center"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
+            <TextView
+                android:id="@+id/textview_ip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_below="@id/textview_date_added"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="28sp" />
 
-                <TextView
-                    android:textColor="@android:color/white"
-                    android:gravity="center"
-                    android:id="@+id/textview_ip"
-                    android:textAlignment="center"
-                    android:textSize="40sp"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-            </RelativeLayout>
-
-            <RelativeLayout
-                android:textAlignment="center"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
-
-                <TextView
-                    android:textColor="@android:color/white"
-                    android:gravity="center"
-                    android:id="@+id/textview_date_added"
-                    android:textAlignment="center"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-            </RelativeLayout>
-        </LinearLayout>
+            <TextView
+                android:id="@+id/textview_date_added"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+        </RelativeLayout>
     </RelativeLayout>
 
     <FrameLayout
@@ -69,7 +75,6 @@
         android:layout_weight="45">
 
         <RelativeLayout
-            android:padding="5dp"
             android:background="@color/backgroundColorDark"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -91,20 +96,15 @@
             <android.support.v4.widget.SwipeRefreshLayout
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/swiperefresh_data"
-
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
                 <android.support.v7.widget.RecyclerView
-                    android:background="@drawable/rectangle"
-                    android:elevation="1dp"
+                    android:background="@android:color/white"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:dividerHeight="5dp"
-                    android:divider="@android:color/transparent"
-                    android:paddingTop="5dp"
-                    android:paddingRight="5dp"
-                    android:paddingBottom="5dp"
+                    android:dividerHeight="1dp"
+                    android:divider="@android:color/darker_gray"
                     android:clipToPadding="false"
                     android:drawSelectorOnTop="true"
                     android:scrollbarStyle="outsideOverlay"

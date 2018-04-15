@@ -64,16 +64,11 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
         PositionData positionData = currentMonitorData.getPositionData();
         TimeData timeData = currentMonitorData.getTimeData();
 
-        double vibrationMagnitude = getMagnitude(vibrationData);
+        double vibrationMagnitude = vibrationData.getAvgVibMagnitude();
         String vibrationMagnitudeDisplay = vibrationFormat.format(vibrationMagnitude) + " g";
 
-        if (vibrationMagnitude > 130) {
-            statusIndicator.setColor(context.getResources().getColor(R.color.lostStatusColor));
-        } else if (vibrationMagnitude > 100) {
-            statusIndicator.setColor(context.getResources().getColor(R.color.vibratingStatusColor));
-        } else {
-            statusIndicator.setColor(context.getResources().getColor(R.color.safeStatusColor));
-        }
+        int statusCode = Item.determineStatus(vibrationMagnitude);
+        statusIndicator.setColor(context.getResources().getColor(Item.getStatusColor(statusCode)));
 
         String positionDisplay = positionFormat.format(positionData.getLatitude()) + "\u00b0 N, "
                 + positionFormat.format(positionData.getLongitude()) + "\u00b0 W";
@@ -87,13 +82,6 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
     @Override
     public int getItemCount() {
         return monitorDataList.size();
-    }
-
-    private double getMagnitude(VibrationData vibrationData) {
-        double avgXVibration = vibrationData.getAvgXVibration();
-        double avgYVibration = vibrationData.getAvgYVibration();
-        double avgZVibration = vibrationData.getAvgZVibration();
-        return Math.sqrt(Math.pow(avgXVibration, 2) + Math.pow(avgYVibration, 2) + Math.pow(avgZVibration, 2));
     }
 }
 

@@ -1,7 +1,10 @@
 package com.example.dq.fsmd2;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -11,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -18,6 +22,7 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,12 +33,14 @@ import java.util.TimerTask;
 
 public class ItemActivity extends AppCompatActivity {
 
+    private View statusIndicator;
     private TextView dateAdded;
     private TextView ip;
 
     private RelativeLayout dataAreaLayout;
     private ArrayList<MonitorData> dataList;
     private DataRecyclerViewAdapter dataRecyclerViewAdapter;
+    private LinearLayoutManager dataLinearLayoutManager;
     private SwipeRefreshLayout dataListRefreshLayout;
     private RecyclerView dataRecyclerView;
     private TextView noDataView;
@@ -74,7 +81,7 @@ public class ItemActivity extends AppCompatActivity {
 
         handler = new Handler();
         handler.post(new Runnable() {
-            int numData = 100;
+            int numData = 20;
 
             @Override
             public void run() {
@@ -86,11 +93,28 @@ public class ItemActivity extends AppCompatActivity {
                         newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
                                 random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
                                 random.nextDouble() * 90, random.nextDouble() * 180, new Date());
+                        VibrationData vibrationData = newData.getVibrationData();
                         dataList.add(0, newData);
+                        int colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                        item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
+                                vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
+                        final ColorDrawable statusBackground = (ColorDrawable) statusIndicator.getBackground();
+                        int colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                        ValueAnimator colorAnimation = ValueAnimator.ofObject(new ArgbEvaluator(), colorFrom, colorTo);
+                        colorAnimation.setDuration(300);
+                        colorAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                            @Override
+                            public void onAnimationUpdate(ValueAnimator animator) {
+                                statusBackground.setColor((int) animator.getAnimatedValue());
+                            }
+                        });
+                        colorAnimation.start();
                         numData--;
                         dataRecyclerViewAdapter.notifyItemInserted(0);
-                        dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataList.size());
-                        dataRecyclerView.scrollToPosition(0);
+                        if (dataLinearLayoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
+                            dataRecyclerView.scrollToPosition(0);
+                        }
+                        dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataRecyclerViewAdapter.getItemCount());
                         showDataVisible();
                     }
                 } catch (Exception e) {
@@ -110,8 +134,10 @@ public class ItemActivity extends AppCompatActivity {
     */
 
     private void setUpSummary() {
-        SimpleDateFormat formatter = new SimpleDateFormat("h:mm a z'\n'MMM. d, yyyy");
+        SimpleDateFormat formatter = new SimpleDateFormat("h:mm a z 'on' MMM. d, yyyy", Locale.US);
 
+        statusIndicator = ((RelativeLayout) findViewById(R.id.layout_item_status)).findViewById(R.id.view_item_status);
+        statusIndicator.setBackgroundColor(getResources().getColor(Item.getStatusColor(item.getStatus())));
         ip = (TextView) findViewById(R.id.textview_ip);
         ip.setText(item.getIP());
 
@@ -129,17 +155,13 @@ public class ItemActivity extends AppCompatActivity {
 
         dataRecyclerViewAdapter = new DataRecyclerViewAdapter(this, dataList);
         dataRecyclerView.setAdapter(dataRecyclerViewAdapter);
-        dataRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        dataLinearLayoutManager = new LinearLayoutManager(this);
+        dataRecyclerView.setLayoutManager(dataLinearLayoutManager);
         dataRecyclerViewAdapter.notifyDataSetChanged();
 
         int safeColor = getResources().getColor(R.color.safeStatusColor);
         int vibratingColor = getResources().getColor(R.color.vibratingStatusColor);
         int lostColor = getResources().getColor(R.color.lostStatusColor);
-
-        GradientDrawable dataBackground = (GradientDrawable) dataRecyclerView.getBackground();
-        dataBackground.setColor(Color.WHITE);
-
-        dataRecyclerView.setBackground(dataBackground);
 
         dataListRefreshLayout.setColorSchemeColors(safeColor, vibratingColor, lostColor);
         dataListRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
