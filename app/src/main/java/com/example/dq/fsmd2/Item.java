@@ -1,13 +1,23 @@
 package com.example.dq.fsmd2;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Delete;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Insert;
+import android.arch.persistence.room.PrimaryKey;
+import android.arch.persistence.room.Query;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by DQ on 12/16/2017.
  */
 
+@Entity
 public class Item implements Serializable {
     private static final String defaultName = "ITEM #";
 
@@ -24,6 +34,8 @@ public class Item implements Serializable {
     public static final int LOST_THRESHOLD = 130;
     public static final int VIB_THRESHOLD = 100;
 
+    @PrimaryKey(autoGenerate = true)
+    private int itemID;
     private String name;
     private String ip;
     private Date dateAdded;
@@ -126,5 +138,17 @@ public class Item implements Serializable {
         } else {
             return SAFE_STATUS;
         }
+    }
+
+    @Dao
+    public interface ItemDao {
+        @Insert
+        void insertAll(Item... items);
+
+        @Delete
+        void delete(Item item);
+
+        @Query("SELECT * FROM item")
+        LiveData<List<Item>> getAllItems();
     }
 }

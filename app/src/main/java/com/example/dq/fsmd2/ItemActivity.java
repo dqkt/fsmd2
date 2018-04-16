@@ -7,10 +7,13 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -34,6 +37,7 @@ import java.util.TimerTask;
 public class ItemActivity extends AppCompatActivity {
 
     private View statusIndicator;
+    private TransitionDrawable statusBackground;
     private TextView dateAdded;
     private TextView ip;
 
@@ -98,17 +102,11 @@ public class ItemActivity extends AppCompatActivity {
                         int colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
                         item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
                                 vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
-                        final ColorDrawable statusBackground = (ColorDrawable) statusIndicator.getBackground();
                         int colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
-                        ValueAnimator colorAnimation = ValueAnimator.ofObject(new ArgbEvaluator(), colorFrom, colorTo);
-                        colorAnimation.setDuration(300);
-                        colorAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                            @Override
-                            public void onAnimationUpdate(ValueAnimator animator) {
-                                statusBackground.setColor((int) animator.getAnimatedValue());
-                            }
-                        });
-                        colorAnimation.start();
+                        ColorDrawable[] colors = {new ColorDrawable(colorFrom), new ColorDrawable(colorTo)};
+                        statusBackground = new TransitionDrawable(colors);
+                        statusIndicator.setBackground(statusBackground);
+                        statusBackground.startTransition(300);
                         numData--;
                         dataRecyclerViewAdapter.notifyItemInserted(0);
                         if (dataLinearLayoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
@@ -157,6 +155,7 @@ public class ItemActivity extends AppCompatActivity {
         dataRecyclerView.setAdapter(dataRecyclerViewAdapter);
         dataLinearLayoutManager = new LinearLayoutManager(this);
         dataRecyclerView.setLayoutManager(dataLinearLayoutManager);
+        ((DefaultItemAnimator) dataRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         dataRecyclerViewAdapter.notifyDataSetChanged();
 
         int safeColor = getResources().getColor(R.color.safeStatusColor);

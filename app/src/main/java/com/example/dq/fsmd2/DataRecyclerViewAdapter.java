@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder> {
 

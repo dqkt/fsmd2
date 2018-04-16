@@ -1,17 +1,29 @@
 package com.example.dq.fsmd2;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Delete;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Insert;
+import android.arch.persistence.room.Query;
+
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by DQ on 12/16/2017.
  */
 
+@Entity(foreignKeys = @ForeignKey(entity = Item.class, parentColumns = "itemID", childColumns = "itemID"))
 public class MonitorData implements Serializable
 {
     private VibrationData vibData;
     private PositionData posData;
     private TimeData timeData;
+
+    private int itemID;
 
     public MonitorData() {
         vibData = null;
@@ -51,4 +63,16 @@ public class MonitorData implements Serializable
         timeData.setDate(date);
     }
     public TimeData getTimeData() { return timeData; }
+
+    @Dao
+    public interface MonitorDataDao {
+        @Insert
+        void insertAll(MonitorData... monitorDatas);
+
+        @Delete
+        void delete(MonitorData monitorData);
+
+        @Query("SELECT * FROM monitordata WHERE itemID IS :itemID")
+        LiveData<List<MonitorData>> getAllMonitorDataFromItem(int itemID);
+    }
 }

@@ -2,6 +2,7 @@ package com.example.dq.fsmd2;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.support.v7.widget.RecyclerView;
@@ -17,13 +18,15 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder> {
 
     private Context context;
-    private ArrayList<Item> items;
-    private ArrayList<Item> itemsPendingRemoval;
+    private List<Item> items;
+    private List<Item> itemsPendingRemoval;
     private LayoutInflater inflater;
 
     private static final int PENDING_REMOVAL_TIMEOUT = 5000;
@@ -46,10 +49,8 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder
 
     @Override
     public void onBindViewHolder(ItemViewHolder holder, int position) {
-
         final Item currentItem = items.get(position);
 
-        final int currentPosition = position;
         holder.regularLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -81,7 +82,8 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder
                 }
             });
         } else {
-            holder.overallLayout.setBackground(context.getResources().getDrawable(R.drawable.rounded_rectangle));
+            holder.overallLayout.setBackground(context.getResources().getDrawable(R.drawable.rectangle));
+            holder.overallLayout.setBackgroundColor(Color.WHITE);
             holder.regularLayout.setVisibility(View.VISIBLE);
             holder.swipeLayout.setVisibility(View.GONE);
         }
@@ -111,9 +113,17 @@ public class ItemRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder
         itemsPendingRemoval.clear();
     }
 
+    public void setItems(List<Item> items) {
+        this.items = items;
+    }
+
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    public void swapItems(int from, int to) {
+        Collections.swap(items, from, to);
     }
 
     public void pendingRemoval(int position) {
@@ -172,14 +182,14 @@ class ItemViewHolder extends RecyclerView.ViewHolder {
 
         overallLayout = (FrameLayout) view;
 
-        regularLayout = (LinearLayout) view.findViewById(R.id.layout_info);
+        regularLayout = view.findViewById(R.id.layout_info);
 
-        name = (TextView) regularLayout.findViewById(R.id.textview_name);
-        ip = (TextView) regularLayout.findViewById(R.id.textview_ip);
-        dateAdded = (TextView) regularLayout.findViewById(R.id.textview_date_added);
+        name = regularLayout.findViewById(R.id.textview_name);
+        ip = regularLayout.findViewById(R.id.textview_ip);
+        dateAdded = regularLayout.findViewById(R.id.textview_date_added);
 
-        swipeLayout = (LinearLayout) view.findViewById(R.id.layout_swipe_item);
-        deleteDescription = (TextView) swipeLayout.findViewById(R.id.textview_delete_description);
-        cancel = (TextView) swipeLayout.findViewById(R.id.textview_cancel);
+        swipeLayout = view.findViewById(R.id.layout_swipe_item);
+        deleteDescription = swipeLayout.findViewById(R.id.textview_delete_description);
+        cancel = swipeLayout.findViewById(R.id.textview_cancel);
     }
 }

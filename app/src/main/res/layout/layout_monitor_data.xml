@@ -9,6 +9,7 @@
     android:layout_height="wrap_content">
 
     <LinearLayout
+        android:layout_gravity="top"
         android:baselineAligned="false"
         android:paddingStart="7dp"
         android:paddingEnd="7dp"
@@ -36,7 +37,7 @@
                 android:layout_margin="0dp"
                 android:layout_height="30dp"
                 android:layout_width="30dp"
-                android:background="@drawable/rectangle"
+                android:background="@drawable/circle"
                 android:id="@+id/view_status" />
         </RelativeLayout>
 
@@ -87,6 +88,10 @@
                 android:layout_width="match_parent"
                 android:id="@+id/textview_time" />
         </RelativeLayout>
-
     </LinearLayout>
+    <View
+        android:layout_gravity="bottom"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"/>
 </FrameLayout>
