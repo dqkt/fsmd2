@@ -1,0 +1,113 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "5ae6d7a991fc4816f6119c7224129f8a",
+    "entities": [
+      {
+        "tableName": "Item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`itemID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `ip` TEXT, `dateAdded` INTEGER, `status` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "itemID",
+            "columnName": "itemID",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ip",
+            "columnName": "ip",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dateAdded",
+            "columnName": "dateAdded",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "itemID"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "MonitorData",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`monitorDataID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `vibData` TEXT, `posData` TEXT, `timeData` INTEGER, `itemID` INTEGER NOT NULL, FOREIGN KEY(`itemID`) REFERENCES `Item`(`itemID`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "monitorDataID",
+            "columnName": "monitorDataID",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vibData",
+            "columnName": "vibData",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "posData",
+            "columnName": "posData",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "timeData",
+            "columnName": "timeData",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "itemID",
+            "columnName": "itemID",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "monitorDataID"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "Item",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "itemID"
+            ],
+            "referencedColumns": [
+              "itemID"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"5ae6d7a991fc4816f6119c7224129f8a\")"
+    ]
+  }
+}

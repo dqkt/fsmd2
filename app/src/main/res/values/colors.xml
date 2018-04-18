@@ -7,6 +7,7 @@
     <color name="backgroundColorDark">#E8E8E8</color>
     <color name="backgroundTextColor">#CCCCCC</color>
     <color name="backgroundTextColorDark">#AAAAAA</color>
+    <color name="noStatusColor">#D7CCC8</color>
     <color name="safeStatusColor">#82E0AA</color>
     <color name="vibratingStatusColor">#F9E79F</color>
     <color name="lostStatusColor">#F1948A</color>

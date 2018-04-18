@@ -2,6 +2,9 @@ package com.example.dq.fsmd2;
 
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
@@ -10,6 +13,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -24,9 +28,12 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -36,13 +43,17 @@ import java.util.TimerTask;
 
 public class ItemActivity extends AppCompatActivity {
 
+    private ItemListViewModel itemListViewModel;
+    private MonitorDataListViewModel monitorDataListViewModel;
+
     private View statusIndicator;
     private TransitionDrawable statusBackground;
+    private int colorFrom;
+    private int colorTo;
     private TextView dateAdded;
     private TextView ip;
 
     private RelativeLayout dataAreaLayout;
-    private ArrayList<MonitorData> dataList;
     private DataRecyclerViewAdapter dataRecyclerViewAdapter;
     private LinearLayoutManager dataLinearLayoutManager;
     private SwipeRefreshLayout dataListRefreshLayout;
@@ -50,10 +61,10 @@ public class ItemActivity extends AppCompatActivity {
     private TextView noDataView;
 
     private Item item;
+    private int itemID;
 
     private Toolbar itemToolbar;
 
-    private Timer timer;
     private Handler handler;
     
     @Override
@@ -63,13 +74,14 @@ public class ItemActivity extends AppCompatActivity {
 
         this.getWindow().getDecorView().setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
 
-        item = (Item) getIntent().getSerializableExtra("Selected Item");
+        item = (Item) getIntent().getSerializableExtra("ITEM");
+        itemID = item.getItemID();
 
-        itemToolbar = (Toolbar) findViewById(R.id.action_bar_item);
+        itemListViewModel = ViewModelProviders.of(this).get(ItemListViewModel.class);
+
+        itemToolbar = findViewById(R.id.action_bar_item);
         setSupportActionBar(itemToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        timer = new Timer();
 
         setTitle(item.getName());
 
@@ -84,44 +96,7 @@ public class ItemActivity extends AppCompatActivity {
         showSummary();
 
         handler = new Handler();
-        handler.post(new Runnable() {
-            int numData = 20;
-
-            @Override
-            public void run() {
-                MonitorData newData;
-                Random random = new Random();
-
-                try {
-                    if (numData > 0) {
-                        newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                                random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                                random.nextDouble() * 90, random.nextDouble() * 180, new Date());
-                        VibrationData vibrationData = newData.getVibrationData();
-                        dataList.add(0, newData);
-                        int colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
-                        item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
-                                vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
-                        int colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
-                        ColorDrawable[] colors = {new ColorDrawable(colorFrom), new ColorDrawable(colorTo)};
-                        statusBackground = new TransitionDrawable(colors);
-                        statusIndicator.setBackground(statusBackground);
-                        statusBackground.startTransition(300);
-                        numData--;
-                        dataRecyclerViewAdapter.notifyItemInserted(0);
-                        if (dataLinearLayoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
-                            dataRecyclerView.scrollToPosition(0);
-                        }
-                        dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataRecyclerViewAdapter.getItemCount());
-                        showDataVisible();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    handler.postDelayed(this, 1000);
-                }
-            }
-        });
+        populateWithTestData(20);
     }
 
     /*
@@ -134,29 +109,45 @@ public class ItemActivity extends AppCompatActivity {
     private void setUpSummary() {
         SimpleDateFormat formatter = new SimpleDateFormat("h:mm a z 'on' MMM. d, yyyy", Locale.US);
 
-        statusIndicator = ((RelativeLayout) findViewById(R.id.layout_item_status)).findViewById(R.id.view_item_status);
+        statusIndicator = (findViewById(R.id.layout_item_status)).findViewById(R.id.view_item_status);
         statusIndicator.setBackgroundColor(getResources().getColor(Item.getStatusColor(item.getStatus())));
-        ip = (TextView) findViewById(R.id.textview_ip);
-        ip.setText(item.getIP());
+        ip = findViewById(R.id.textview_ip);
+        ip.setText(item.getIp());
 
-        dateAdded = (TextView) findViewById(R.id.textview_date_added);
+        dateAdded = findViewById(R.id.textview_date_added);
         dateAdded.setText(formatter.format(item.getDateAdded()));
     }
 
     private void setUpDataArea() {
-        dataList = new ArrayList<MonitorData>();
+        dataAreaLayout = findViewById(R.id.view_data_area);
+        dataListRefreshLayout = findViewById(R.id.swiperefresh_data);
+        dataRecyclerView = findViewById(R.id.recyclerview_item_data);
+        noDataView = findViewById(R.id.textview_no_data);
 
-        dataAreaLayout = (RelativeLayout) findViewById(R.id.view_data_area);
-        dataListRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh_data);
-        dataRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_item_data);
-        noDataView = (TextView) findViewById(R.id.textview_no_data);
-
-        dataRecyclerViewAdapter = new DataRecyclerViewAdapter(this, dataList);
+        dataRecyclerViewAdapter = new DataRecyclerViewAdapter(this, new ArrayList<MonitorData>());
         dataRecyclerView.setAdapter(dataRecyclerViewAdapter);
         dataLinearLayoutManager = new LinearLayoutManager(this);
         dataRecyclerView.setLayoutManager(dataLinearLayoutManager);
         ((DefaultItemAnimator) dataRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         dataRecyclerViewAdapter.notifyDataSetChanged();
+
+        monitorDataListViewModel = ViewModelProviders.of(this, new MonitorDataListViewModelFactory(this.getApplication(), itemID)).get(MonitorDataListViewModel.class);
+        monitorDataListViewModel.getMonitorDataList().observe(this, new Observer<List<MonitorData>>() {
+            @Override
+            public void onChanged(@Nullable List<MonitorData> monitorDatas) {
+                dataRecyclerViewAdapter.setMonitorDatas(monitorDatas);
+                dataRecyclerViewAdapter.notifyDataSetChanged();
+                ColorDrawable[] colors = {new ColorDrawable(colorFrom), new ColorDrawable(colorTo)};
+                statusBackground = new TransitionDrawable(colors);
+                statusIndicator.setBackground(statusBackground);
+                statusBackground.startTransition(300);
+                dataRecyclerViewAdapter.notifyItemInserted(0);
+                if (dataLinearLayoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
+                    dataRecyclerView.scrollToPosition(0);
+                }
+                dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataRecyclerViewAdapter.getItemCount());
+            }
+        });
 
         int safeColor = getResources().getColor(R.color.safeStatusColor);
         int vibratingColor = getResources().getColor(R.color.vibratingStatusColor);
@@ -189,32 +180,37 @@ public class ItemActivity extends AppCompatActivity {
         dataAreaLayout.invalidate();
     }
 
-    private void populateWithTestData(int numData, int intervalSeconds) {
-        timer.schedule(new AddTestDataTask(100), 0, 1000);
-        dataRecyclerViewAdapter.notifyDataSetChanged();
-        showDataVisible();
-    }
+    private void populateWithTestData(final int num) {
+        handler.post(new Runnable() {
+            int numData = num;
 
+            @Override
+            public void run() {
+                MonitorData newData;
+                Random random = new Random();
 
-    class AddTestDataTask extends TimerTask {
-        int numData;
-
-        public AddTestDataTask(int numData) {
-            this.numData = numData;
-        }
-
-        @Override
-        public void run() {
-            MonitorData newData;
-            Random random = new Random();
-
-            if (numData > 0) {
-                newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                        random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                        random.nextDouble() * 90, random.nextDouble() * 180, new Date());
-                dataList.add(0, newData);
-                numData--;
+                try {
+                    if (numData > 0) {
+                        newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
+                                random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
+                                random.nextDouble() * 90, random.nextDouble() * 180, new Date());
+                        VibrationData vibrationData = newData.getVibData();
+                        colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                        item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
+                                vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
+                        itemListViewModel.updateItem(item);
+                        colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                        newData.setItemID(itemID);
+                        monitorDataListViewModel.addMonitorData(newData);
+                        numData--;
+                        showDataVisible();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    handler.postDelayed(this, 1000);
+                }
             }
-        }
+        });
     }
 }

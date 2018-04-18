@@ -1,5 +1,10 @@
 package com.example.dq.fsmd2;
 
+import android.arch.persistence.room.TypeConverter;
+
+import java.text.SimpleDateFormat;
+import java.util.Scanner;
+
 /**
  * Created by DQ on 12/16/2017.
  */
@@ -41,6 +46,22 @@ public class VibrationData {
         this.avgVibMagnitude = calculateVibrationMagnitude(avgXVib, avgYVib, avgZVib);
     }
 
+    public VibrationData(double peakXVib, double peakYVib, double peakZVib,
+                         double avgXVib, double avgYVib, double avgZVib,
+                         double peakVibMagnitude, double avgVibMagnitude) {
+        this.peakXVibration = peakXVib;
+        this.peakYVibration = peakYVib;
+        this.peakZVibration = peakZVib;
+
+        this.peakVibMagnitude = peakVibMagnitude;
+
+        this.avgXVibration = avgXVib;
+        this.avgYVibration = avgYVib;
+        this.avgZVibration = avgZVib;
+
+        this.avgVibMagnitude = avgVibMagnitude;
+    }
+
     public void setPeakXVibration(double peakXVib) { this.peakXVibration = peakXVib; }
     public double getPeakXVibration() { return peakXVibration; }
     public void setPeakYVibration(double peakYVib) { this.peakYVibration = peakYVib; }
@@ -71,4 +92,24 @@ public class VibrationData {
     public static double calculateVibrationMagnitude(double xVibration, double yVibration, double zVibration) {
         return Math.sqrt(Math.pow(xVibration, 2) + Math.pow(yVibration, 2) + Math.pow(zVibration, 2));
     }
+}
+
+class VibrationDataConverter {
+
+    @TypeConverter
+    public static VibrationData toVibrationData(String value) {
+        Scanner sc = new Scanner(value);
+        sc.useDelimiter("\t");
+        return new VibrationData(sc.nextDouble(), sc.nextDouble(), sc.nextDouble(), sc.nextDouble(),
+                sc.nextDouble(), sc.nextDouble(), sc.nextDouble(), sc.nextDouble());
+    }
+
+    @TypeConverter
+    public static String toString(VibrationData vibrationData) {
+        return String.valueOf(vibrationData.getPeakXVibration()) + "\t" + String.valueOf(vibrationData.getPeakYVibration()) + "\t" +
+                String.valueOf(vibrationData.getPeakZVibration()) + "\t" + String.valueOf(vibrationData.getAvgXVibration()) + "\t" +
+                String.valueOf(vibrationData.getAvgYVibration()) + "\t" + String.valueOf(vibrationData.getAvgZVibration()) + "\t" +
+                String.valueOf(vibrationData.getPeakVibMagnitude()) + "\t" + String.valueOf(vibrationData.getAvgVibMagnitude());
+    }
+
 }

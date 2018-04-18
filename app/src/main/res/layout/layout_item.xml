@@ -67,13 +67,19 @@
                 android:id="@+id/textview_ip" />
         </LinearLayout>
 
-        <RelativeLayout
+        <FrameLayout
             android:layout_gravity="center"
             android:textAlignment="center"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="12">
 
+            <ProgressBar
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/progress_bar_connecting"/>
+            
             <TextView
                 android:gravity="center"
                 android:textSize="14sp"
@@ -82,7 +88,7 @@
                 android:layout_height="match_parent"
                 android:layout_width="match_parent"
                 android:id="@+id/textview_date_added" />
-        </RelativeLayout>
+        </FrameLayout>
 
     </LinearLayout>
 

@@ -1,6 +1,8 @@
 package com.example.dq.fsmd2;
 
 import android.app.SearchManager;
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,6 +10,7 @@ import android.content.SharedPreferences;
 import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -25,6 +28,7 @@ import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -49,10 +53,19 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
+
+    private ItemListViewModel itemListViewModel;
+    private MonitorDataListViewModel monitorDataListViewModel;
+    private Observer<List<Item>> itemListObserver;
+    private int numItems;
+    private int numSafe;
+    private int numVibrating;
+    private int numLost;
 
     private RelativeLayout addItemManually;
     private RelativeLayout addItemWithQRCode;
@@ -64,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
     private AlertDialog addNewItemWithQRCodeInfoDialog;
     private AlertDialog addNewItemWithPhoneDetectInfoDialog;
 
-    private MenuItem deleteItem;
     private MenuItem searchItems;
 
     private SearchView searchItemsView;
@@ -75,10 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SwitchCompat collectingDataSwitch;
 
-    private View summary;
-
     private RelativeLayout itemAreaLayout;
-    private ArrayList<Item> itemList;
     private ItemRecyclerViewAdapter itemRecyclerViewAdapter;
     private SwipeRefreshLayout itemListRefreshLayout;
     private RecyclerView itemRecyclerView;
@@ -90,12 +99,13 @@ public class MainActivity extends AppCompatActivity {
     private AlertDialog.Builder addNewItemDialog;
     private EditText newItemName;
     private EditText newItemIP;
+    private boolean itemNameEmpty;
+    private boolean itemIpInvalid;
+    private boolean itemIpInUse;
 
     private TextView numSafeTextView;
     private TextView numVibratingTextView;
     private TextView numLostTextView;
-
-    private boolean isShowingContextualActionBar;
 
     private static final Pattern IP_PATTERN = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
@@ -104,13 +114,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mainToolbar = (Toolbar) findViewById(R.id.action_bar_main);
+        mainToolbar = findViewById(R.id.action_bar_main);
         setSupportActionBar(mainToolbar);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        isShowingContextualActionBar = false;
-
-        mainDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mainDrawer = findViewById(R.id.drawer_layout);
 
         setUpItemsArea();
         setUpSummary();
@@ -143,14 +151,14 @@ public class MainActivity extends AppCompatActivity {
 
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
 
-        LayoutInflater inflater = (LayoutInflater) getSystemService(MainActivity.this.LAYOUT_INFLATER_SERVICE);
+        LayoutInflater inflater = (LayoutInflater) getSystemService(MainActivity.LAYOUT_INFLATER_SERVICE);
         searchItemsView = (SearchView) inflater.inflate(R.layout.search_items_view, null);
 
         searchItems.setActionView(R.layout.search_items_view);
         searchItemsView = (SearchView) searchItems.getActionView();
 
         searchItemsView.setIconifiedByDefault(true);
-        ImageView searchItemsImageView = (ImageView) searchItemsView.findViewById(android.support.v7.appcompat.R.id.search_button);
+        ImageView searchItemsImageView = searchItemsView.findViewById(android.support.v7.appcompat.R.id.search_button);
         searchItemsImageView.setImageResource(R.drawable.ic_search_white);
 
         searchItemsView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
@@ -190,11 +198,10 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
-        numSafeTextView = (TextView) findViewById(R.id.textview_num_safe);
-        numVibratingTextView = (TextView) findViewById(R.id.textview_num_vibrating);
-        numLostTextView = (TextView) findViewById(R.id.textview_num_lost);
+        numSafeTextView = findViewById(R.id.textview_num_safe);
+        numVibratingTextView = findViewById(R.id.textview_num_vibrating);
+        numLostTextView = findViewById(R.id.textview_num_lost);
 
-        loadItems();
         showSummary();
         setUpItemsSwipe();
     }
@@ -202,19 +209,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
-
-        Item.setNumSafe(0);
-        Item.setNumVibrating(0);
-        Item.setNumLost(0);
-
-        saveItems();
     }
 
     private void setUpItemsArea() {
-        itemAreaLayout = (RelativeLayout) findViewById(R.id.view_items_area);
-        itemListRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh_items);
-        itemRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_items);
-        noItemsView = (TextView) findViewById(R.id.textview_no_items);
+        itemAreaLayout = findViewById(R.id.view_items_area);
+        itemListRefreshLayout = findViewById(R.id.swiperefresh_items);
+        itemRecyclerView = findViewById(R.id.recyclerview_items);
+        noItemsView = findViewById(R.id.textview_no_items);
+
+        itemListViewModel = ViewModelProviders.of(this).get(ItemListViewModel.class);
+        monitorDataListViewModel = ViewModelProviders.of(this).get(MonitorDataListViewModel.class);
+
+        itemRecyclerViewAdapter = new ItemRecyclerViewAdapter(this, new ArrayList<Item>(), itemListViewModel, monitorDataListViewModel);
+        itemRecyclerView.setAdapter(itemRecyclerViewAdapter);
+        itemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        itemRecyclerViewAdapter.notifyDataSetChanged();
+
+        itemListObserver = new Observer<List<Item>>() {
+            @Override
+            public void onChanged(@Nullable List<Item> items) {
+                itemRecyclerViewAdapter.setItems(items);
+                itemRecyclerViewAdapter.notifyDataSetChanged();
+                showSummary();
+            }
+        };
+        itemListViewModel.getItemList().observe(this, itemListObserver);
 
         int safeColor = getResources().getColor(R.color.safeStatusColor);
         int vibratingColor = getResources().getColor(R.color.vibratingStatusColor);
@@ -226,32 +245,40 @@ public class MainActivity extends AppCompatActivity {
             public void onRefresh() {
                 itemRecyclerViewAdapter.notifyDataSetChanged();
                 itemListRefreshLayout.setRefreshing(false);
+                showSummary();
             }
         });
+
+        if (dividerItemDecoration == null) {
+            dividerItemDecoration = new DividerItemDecoration(itemRecyclerView.getContext(),
+                    ((LinearLayoutManager) itemRecyclerView.getLayoutManager()).getOrientation());
+            dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.list_items_divider));
+            itemRecyclerView.addItemDecoration(dividerItemDecoration);
+        }
 
         itemRecyclerView.bringToFront();
     }
 
     private void setUpAddItemButtons() {
-        addItemManually = (RelativeLayout) findViewById(R.id.button_add_item_manually);
-        addItemWithQRCode = (RelativeLayout) findViewById(R.id.button_add_item_with_qr_code);
-        addItemWithPhoneDetect = (RelativeLayout) findViewById(R.id.button_add_item_phone_detect);
+        addItemManually = findViewById(R.id.button_add_item_manually);
+        addItemWithQRCode = findViewById(R.id.button_add_item_with_qr_code);
+        addItemWithPhoneDetect = findViewById(R.id.button_add_item_phone_detect);
 
         LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService(MainActivity.LAYOUT_INFLATER_SERVICE);
 
         addNewItemManuallyInfoDialog = new AlertDialog.Builder(MainActivity.this).create();
         View view = inflater.inflate(R.layout.layout_add_item_manually_info, null);
-        addItemInfoLayout = (LinearLayout) view.findViewById(R.id.layout_add_item_info);
+        addItemInfoLayout = view.findViewById(R.id.layout_add_item_info);
         addNewItemManuallyInfoDialog.setView(addItemInfoLayout);
 
         addNewItemWithQRCodeInfoDialog = new AlertDialog.Builder(MainActivity.this).create();
         view = inflater.inflate(R.layout.layout_add_item_with_qr_code_info, null);
-        addItemInfoLayout = (LinearLayout) view.findViewById(R.id.layout_add_item_info);
+        addItemInfoLayout = view.findViewById(R.id.layout_add_item_info);
         addNewItemWithQRCodeInfoDialog.setView(addItemInfoLayout);
 
         addNewItemWithPhoneDetectInfoDialog = new AlertDialog.Builder(MainActivity.this).create();
         view = inflater.inflate(R.layout.layout_add_item_with_phone_detect_info, null);
-        addItemInfoLayout = (LinearLayout) view.findViewById(R.id.layout_add_item_info);
+        addItemInfoLayout = view.findViewById(R.id.layout_add_item_info);
         addNewItemWithPhoneDetectInfoDialog.setView(addItemInfoLayout);
 
         addItemManually.setOnClickListener(new View.OnClickListener() {
@@ -354,12 +381,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        NavigationView navDrawer = (NavigationView) findViewById(R.id.nav_drawer);
+        NavigationView navDrawer = findViewById(R.id.nav_drawer);
         final Menu drawerMenu = navDrawer.getMenu();
 
-        MenuItem collectingDataMenuItem = (MenuItem) drawerMenu.findItem(R.id.collecting_data);
+        MenuItem collectingDataMenuItem = drawerMenu.findItem(R.id.collecting_data);
 
-        collectingDataSwitch = (SwitchCompat) MenuItemCompat.getActionView(collectingDataMenuItem).findViewById(R.id.switch_collecting_data);
+        collectingDataSwitch = MenuItemCompat.getActionView(collectingDataMenuItem).findViewById(R.id.switch_collecting_data);
 
         if (collectingDataSwitch != null) {
             collectingDataSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -380,176 +407,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void loadItems() {
-        itemList = new ArrayList<Item>();
-
-        SharedPreferences itemNamesFile = getSharedPreferences("ITEMS", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = itemNamesFile.edit();
-
-        int numItems = itemNamesFile.getInt("NUM ITEMS", 0);
-
-        Scanner itemNamesScanner;
-
-        Item item;
-        String itemInfo = "";
-        String itemName = "";
-        String itemIP;
-        int itemStatus;
-
-        SharedPreferences itemDataFile;
-
-        String itemData = "";
-        int numMonitorData;
-
-        Scanner itemDataScanner;
-
-        MonitorData monitorData;
-        double peakXVib, peakYVib, peakZVib, avgXVib, avgYVib, avgZVib;
-        double longitude, latitude;
-
-        Date dateAdded;
-        String dateString;
-        SimpleDateFormat formatter = new SimpleDateFormat("hh:mm-a-z,MMM/dd/yyyy");
-
-        Date date;
-
-        for (int i = 0; i < numItems; i++) {
-            itemInfo = itemNamesFile.getString("ITEM " + String.valueOf(i + 1), "");
-            itemNamesScanner = new Scanner(itemInfo);
-            itemNamesScanner.useDelimiter("\t");
-
-            itemName = itemNamesScanner.next();
-            itemIP = itemNamesScanner.next();
-            itemStatus = itemNamesScanner.nextInt();
-            dateString = itemNamesScanner.next();
-
-            try {
-                dateAdded = formatter.parse(dateString);
-            } catch (ParseException e) {
-                dateAdded = new Date();
-                e.printStackTrace();
-            }
-
-            itemDataFile = getSharedPreferences(itemName + " DATA", Context.MODE_PRIVATE);
-
-            item = new Item(itemName, itemIP, dateAdded);
-            item.setStatus(itemStatus);
-
-            numMonitorData = itemDataFile.getInt("NUM DATA", 0);
-
-            for (int j = 0; j < numMonitorData; j++) {
-                itemData = itemDataFile.getString("DATA " + String.valueOf(j + 1), "");
-                itemDataScanner = new Scanner(itemData);
-                itemDataScanner.useDelimiter("\t");
-
-                peakXVib = itemDataScanner.nextDouble();
-                peakYVib = itemDataScanner.nextDouble();
-                peakZVib = itemDataScanner.nextDouble();
-
-                avgXVib = itemDataScanner.nextDouble();
-                avgYVib = itemDataScanner.nextDouble();
-                avgZVib = itemDataScanner.nextDouble();
-
-                longitude = itemDataScanner.nextDouble();
-                latitude = itemDataScanner.nextDouble();
-
-                try {
-                    date = formatter.parse(itemDataScanner.next());
-                } catch (ParseException e) {
-                    date = new Date();
-                    e.printStackTrace();
-                }
-
-                monitorData = new MonitorData(peakXVib, peakYVib, peakZVib, avgXVib, avgYVib, avgZVib, longitude, latitude, date);
-                item.addMonitorData(monitorData);
-            }
-
-            itemList.add(item);
-        }
-
-        itemRecyclerViewAdapter = new ItemRecyclerViewAdapter(this, itemList);
-        itemRecyclerView.setAdapter(itemRecyclerViewAdapter);
-        itemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        itemRecyclerViewAdapter.notifyDataSetChanged();
-
-        if (dividerItemDecoration == null) {
-            dividerItemDecoration = new DividerItemDecoration(itemRecyclerView.getContext(),
-                    ((LinearLayoutManager) itemRecyclerView.getLayoutManager()).getOrientation());
-            dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.list_items_divider));
-            itemRecyclerView.addItemDecoration(dividerItemDecoration);
-        }
-
-        if (itemList.size() == 0) {
-            showNoItems();
-        } else {
-            showItemsVisible();
-            showSummary();
-        }
-    }
-
-    private void saveItems() {
-        SharedPreferences itemNamesFile = getSharedPreferences("ITEMS", Context.MODE_PRIVATE);
-        SharedPreferences.Editor itemNamesFileEditor = itemNamesFile.edit();
-
-        int numItems = itemList.size();
-        itemNamesFileEditor.putInt("NUM ITEMS", numItems);
-
-        Item item;
-        String itemInfo = "";
-        ArrayList<MonitorData> monitorDataList;
-        int numMonitorData;
-
-        SharedPreferences itemDataFile;
-        SharedPreferences.Editor itemDataFileEditor;
-
-        String data = "";
-
-        MonitorData monitorData;
-
-        VibrationData vibData;
-        PositionData posData;
-        TimeData timeData;
-
-        SimpleDateFormat formatter = new SimpleDateFormat("hh:mm-a-z,MMM/dd/yyyy");
-
-        Date date;
-
-        for (int i = 0; i < numItems; i++) {
-            item = itemList.get(i);
-            itemInfo = item.getName() + "\t" + item.getIP() + "\t" + item.getStatus() + "\t" + formatter.format(item.getDateAdded());
-
-            itemNamesFileEditor.putString("ITEM " + String.valueOf(i + 1), itemInfo);
-
-            itemDataFile = getSharedPreferences(item.getName() + " DATA", Context.MODE_PRIVATE);
-            itemDataFileEditor = itemDataFile.edit();
-
-            monitorDataList = item.getMonitorDataList();
-            numMonitorData = monitorDataList.size();
-
-            itemDataFileEditor.putInt("NUM DATA", numMonitorData);
-
-            for (int j = 0; j < numMonitorData; j++) {
-                monitorData = monitorDataList.get(j);
-
-                vibData = monitorData.getVibrationData();
-                posData = monitorData.getPositionData();
-                timeData = monitorData.getTimeData();
-
-                date = timeData.getDate();
-
-                data = vibData.getPeakXVibration() + "\t" + vibData.getPeakYVibration() + "\t" + vibData.getPeakZVibration() + "\t" +
-                        vibData.getAvgXVibration() + "\t" + vibData.getAvgYVibration() + "\t" + vibData.getAvgZVibration() + "\t" +
-                        posData.getLongitude() + "\t" + posData.getLatitude() + "\t" + formatter.format(date);
-
-                itemDataFileEditor.putString("DATA " + String.valueOf(j + 1), data);
-            }
-
-            itemDataFileEditor.commit();
-        }
-
-        itemNamesFileEditor.commit();
-    }
-
     private void setUpSummary() {
         View statusReport = findViewById(R.id.view_safe_status);
         GradientDrawable statusIndicator = (GradientDrawable) statusReport.getBackground();
@@ -568,7 +425,7 @@ public class MainActivity extends AppCompatActivity {
         if (swipeUtil == null) {
             swipeUtil = new SwipeUtil(0, ItemTouchHelper.LEFT, this) {
                 public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-                    Collections.swap(itemList, viewHolder.getAdapterPosition(), target.getAdapterPosition());
+                    // Collections.swap(itemList, viewHolder.getAdapterPosition(), target.getAdapterPosition());
                     itemRecyclerViewAdapter.notifyItemMoved(viewHolder.getAdapterPosition(), target.getAdapterPosition());
                     return true;
                 }
@@ -628,15 +485,15 @@ public class MainActivity extends AppCompatActivity {
         LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService(MainActivity.LAYOUT_INFLATER_SERVICE);
         View view = inflater.inflate(R.layout.layout_new_item_dialog, null);
 
-        LinearLayout addNewItemLayout = (LinearLayout) view.findViewById(R.id.layout_adding_item_text);
+        LinearLayout addNewItemLayout = view.findViewById(R.id.layout_adding_item_text);
 
-        final TextInputLayout itemNameTextInput = (TextInputLayout) view.findViewById(R.id.textinput_item_name);
+        final TextInputLayout itemNameTextInput = view.findViewById(R.id.textinput_item_name);
         itemNameTextInput.setErrorEnabled(true);
         itemNameTextInput.setHint("Name");
         newItemName = (TextInputEditText) view.findViewById(R.id.edittext_item_name);
-        newItemName.setText("Item " + (itemList.size() + 1));
+        newItemName.setText("Item " + (numItems + 1));
 
-        final TextInputLayout itemIPTextInput = (TextInputLayout) view.findViewById(R.id.textinput_item_ip);
+        final TextInputLayout itemIPTextInput = view.findViewById(R.id.textinput_item_ip);
         itemIPTextInput.setErrorEnabled(true);
         itemIPTextInput.setHint("IP Address");
         newItemIP = (TextInputEditText) view.findViewById(R.id.edittext_item_ip);
@@ -651,134 +508,50 @@ public class MainActivity extends AppCompatActivity {
 
         dialog.show();
 
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener()
-        {
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 String itemName = newItemName.getText().toString().replaceAll("^\\s+|\\s+$", "");
-                String itemIP = newItemIP.getText().toString();
-                boolean valid = true;
+                final String itemIp = newItemIP.getText().toString();
+                itemNameEmpty = true;
+                itemIpInvalid = true;
+                itemIpInUse = true;
 
-                if (itemName.equalsIgnoreCase("")) {
+                if (!itemName.equalsIgnoreCase("")) {
+                    itemNameEmpty = false;
+                }
+
+                if (isValidIP(itemIp)) {
+                    itemIpInvalid = false;
+                }
+
+                Thread checkItemIpInUseThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (itemListViewModel.itemWithIpExists(itemIp) == 0) {
+                            itemIpInUse = false;
+                        }
+                    }
+                });
+                checkItemIpInUseThread.start();
+
+                if (itemNameEmpty) {
                     itemNameTextInput.setError("Empty field");
-                    valid = false;
                 }
-
-                if (isValidIP(itemIP) == false) {
+                if (itemIpInvalid) {
                     itemIPTextInput.setError("Invalid IP address format");
-                    valid = false;
-                }
-
-                for (Item item : itemList) {
-                    if (item.getName().equalsIgnoreCase(itemName)) {
-                        itemNameTextInput.setError("This item name already exists");
-                        valid = false;
-                        break;
-                    }
-                    if (item.getIP().equals(itemIP)) {
+                } else {
+                    while (checkItemIpInUseThread.isAlive());
+                    if (itemIpInUse) {
                         itemIPTextInput.setError("This IP address is already in use");
-                        valid = false;
-                        break;
                     }
                 }
-
-                if (valid) {
-                    createNewItem(itemName, itemIP);
+                if (!itemNameEmpty && !itemIpInvalid && !itemIpInUse) {
+                    itemListViewModel.addItem(new Item(itemName, itemIp));
                     dialog.dismiss();
                 }
             }
         });
-    }
-
-    private void createNewItem(String itemName, String itemIP) {
-        Item newItem = new Item(itemName, itemIP);
-        newItem.setStatus(Item.SAFE_STATUS);
-        itemList.add(newItem);
-        showItemsVisible();
-        showSummary();
-
-        SharedPreferences saveFile = getSharedPreferences("ITEMS", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = saveFile.edit();
-
-        SimpleDateFormat formatter = new SimpleDateFormat("hh:mm-a-z,MMM/dd/yyyy");
-
-        String itemInfo = itemName + "\t" + itemIP + "\t" + newItem.getStatus() + "\t" + formatter.format(newItem.getDateAdded());
-
-        editor.putString("ITEM " + String.valueOf(itemList.size()), itemInfo);
-        editor.putInt("NUM ITEMS", itemList.size());
-
-        editor.commit();
-
-        /*
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this);
-        notificationBuilder.setContentTitle("New item added");
-
-        notificationBuilder.setSmallIcon(R.drawable.ic_hearing);
-
-        notificationBuilder.setContentText("Now tracking " + itemName + ".");
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(1, notificationBuilder.build());
-
-        Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        notificationBuilder.setSound(uri);
-        */
-    }
-
-    class RequestTask extends AsyncTask<String, String, String> {
-        private int MODE = 0; //1 == title of song , 2 == volume
-        private boolean error = false; //If there was an error.
-        //The actual task which requests the data from the Arduino.
-        //Can be fired with: new RequestTask().execute(String url, String MODE(1 for main label, rest you can change/add));
-        @Override
-        protected String doInBackground(String... uri) {
-
-            MODE = Integer.parseInt(uri[1]);    //Set the mode.
-
-            String responseString;
-
-            try {
-                URLConnection connection = new URL(uri[0]).openConnection();
-
-                BufferedReader br = new BufferedReader(new InputStreamReader((connection.getInputStream())));
-                StringBuilder sb = new StringBuilder();
-                String output;
-                while ((output = br.readLine()) != null) {
-                    sb.append(output);
-
-                }
-                responseString = sb.toString();
-            } catch (Exception e){
-                error = true;
-                responseString = e.getLocalizedMessage();
-            }
-
-            return responseString;
-        }
-
-        //After requesting the data.
-        @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
-
-            result = result.replace("HTTP/1.1 200 OKContent-type:text/html", "");
-            if(!error){
-                if(MODE == 0){
-                    Toast.makeText(MainActivity.this, "Starting the Async went wrong", Toast.LENGTH_LONG).show();
-                }
-                else if(MODE == 1){
-
-                }
-                else if(MODE == 2){
-
-                }
-            }
-            else{
-                Toast.makeText(MainActivity.this, "Oops, something went wrong.",Toast.LENGTH_LONG).show();
-            }
-
-        }
     }
 
     private void showNoItems() {
@@ -793,15 +566,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showSummary() {
-        int numSafe = Item.getNumSafe();
-        int numVibrating = Item.getNumVibrating();
-        int numLost = Item.getNumLost();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                numSafe = itemListViewModel.getNumItemsWithStatus(Item.SAFE_STATUS);
+            }
+        }).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                numVibrating = itemListViewModel.getNumItemsWithStatus(Item.VIBRATING_STATUS);
+            }
+        }).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                numLost = itemListViewModel.getNumItemsWithStatus(Item.LOST_STATUS);
+            }
+        }).start();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                numItems = itemListViewModel.getNumItems();
+            }
+        }).start();
 
         numSafeTextView.setText(String.valueOf(numSafe));
         numVibratingTextView.setText(String.valueOf(numVibrating));
         numLostTextView.setText(String.valueOf(numLost));
 
-        int numItems = itemList.size();
         String title = "Tracking " + numItems + " item";
 
         if (numItems == 0) {
@@ -836,11 +630,61 @@ public class MainActivity extends AppCompatActivity {
         dialog.getWindow().setAttributes(layoutParams);
     }
 
-    public boolean showingContextualActionBar() {
-        return isShowingContextualActionBar;
-    }
-
     public static boolean isValidIP(final String ip) {
         return IP_PATTERN.matcher(ip).matches();
+    }
+}
+
+class RequestTask extends AsyncTask<String, String, String> {
+    private int MODE = 0; //1 == title of song , 2 == volume
+    private boolean error = false; //If there was an error.
+    //The actual task which requests the data from the Arduino.
+    //Can be fired with: new RequestTask().execute(String url, String MODE(1 for main label, rest you can change/add));
+    @Override
+    protected String doInBackground(String... uri) {
+
+        MODE = Integer.parseInt(uri[1]);    //Set the mode.
+
+        String responseString;
+
+        try {
+            URLConnection connection = new URL(uri[0]).openConnection();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader((connection.getInputStream())));
+            StringBuilder sb = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                sb.append(output);
+
+            }
+            responseString = sb.toString();
+        } catch (Exception e){
+            error = true;
+            responseString = e.getLocalizedMessage();
+        }
+
+        return responseString;
+    }
+
+    //After requesting the data.
+    @Override
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+
+        result = result.replace("HTTP/1.1 200 OKContent-type:text/html", "");
+        if (!error) {
+            if (MODE == 0){
+                // Toast.makeText(MainActivity.this, "Starting the Async went wrong", Toast.LENGTH_LONG).show();
+            }
+            else if (MODE == 1){
+
+            }
+            else if (MODE == 2){
+
+            }
+        } else {
+            // Toast.makeText(MainActivity.this, "Oops, something went wrong.",Toast.LENGTH_LONG).show();
+        }
+
     }
 }
