@@ -113,6 +113,9 @@ public class MonitorData implements Serializable {
 
         @Query("SELECT * FROM monitordata WHERE itemID IS :itemID ORDER BY timeData DESC")
         LiveData<List<MonitorData>> getAllMonitorDatasFromItem(int itemID);
+
+        @Query("SELECT MAX(timeData) FROM monitordata WHERE itemID IS :itemID")
+        long getLatestTimestamp(int itemID);
     }
 }
 

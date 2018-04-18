@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable List<Item> items) {
                 itemRecyclerViewAdapter.setItems(items);
-                itemRecyclerViewAdapter.notifyDataSetChanged();
+                itemRecyclerViewAdapter.notifyItemRangeChanged(0, numItems, new ArrayList<>());
                 showSummary();
             }
         };

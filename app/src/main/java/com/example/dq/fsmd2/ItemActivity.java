@@ -21,6 +21,7 @@ import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
@@ -46,12 +47,18 @@ public class ItemActivity extends AppCompatActivity {
     private ItemListViewModel itemListViewModel;
     private MonitorDataListViewModel monitorDataListViewModel;
 
+    private SimpleDateFormat formatter;
+
     private View statusIndicator;
     private TransitionDrawable statusBackground;
     private int colorFrom;
     private int colorTo;
     private TextView dateAdded;
     private TextView ip;
+    private TextView numData;
+    private int numDataPoints;
+    private TextView latestTimestamp;
+    private long latestTimestampData;
 
     private RelativeLayout dataAreaLayout;
     private DataRecyclerViewAdapter dataRecyclerViewAdapter;
@@ -96,7 +103,7 @@ public class ItemActivity extends AppCompatActivity {
         showSummary();
 
         handler = new Handler();
-        populateWithTestData(20);
+        populateWithTestData(10);
     }
 
     /*
@@ -107,7 +114,7 @@ public class ItemActivity extends AppCompatActivity {
     */
 
     private void setUpSummary() {
-        SimpleDateFormat formatter = new SimpleDateFormat("h:mm a z 'on' MMM. d, yyyy", Locale.US);
+        formatter = new SimpleDateFormat("h:mm a z 'on' MMM. d, yyyy", Locale.US);
 
         statusIndicator = (findViewById(R.id.layout_item_status)).findViewById(R.id.view_item_status);
         statusIndicator.setBackgroundColor(getResources().getColor(Item.getStatusColor(item.getStatus())));
@@ -116,6 +123,9 @@ public class ItemActivity extends AppCompatActivity {
 
         dateAdded = findViewById(R.id.textview_date_added);
         dateAdded.setText(formatter.format(item.getDateAdded()));
+
+        numData = findViewById(R.id.textview_num_data);
+        latestTimestamp = findViewById(R.id.textview_latest_timestamp);
     }
 
     private void setUpDataArea() {
@@ -136,7 +146,6 @@ public class ItemActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable List<MonitorData> monitorDatas) {
                 dataRecyclerViewAdapter.setMonitorDatas(monitorDatas);
-                dataRecyclerViewAdapter.notifyDataSetChanged();
                 ColorDrawable[] colors = {new ColorDrawable(colorFrom), new ColorDrawable(colorTo)};
                 statusBackground = new TransitionDrawable(colors);
                 statusIndicator.setBackground(statusBackground);
@@ -146,6 +155,17 @@ public class ItemActivity extends AppCompatActivity {
                     dataRecyclerView.scrollToPosition(0);
                 }
                 dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataRecyclerViewAdapter.getItemCount());
+                Thread getNumDataThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        numDataPoints = monitorDataListViewModel.getNumMonitorDataFromItem(itemID);
+                        latestTimestampData = monitorDataListViewModel.getLatestTimestamp(itemID);
+                    }
+                });
+                getNumDataThread.start();
+                while (getNumDataThread.isAlive());
+                numData.setText(String.valueOf(numDataPoints + " data points"));
+                latestTimestamp.setText(formatter.format(new Date(latestTimestampData)));
             }
         });
 
@@ -203,7 +223,6 @@ public class ItemActivity extends AppCompatActivity {
                         newData.setItemID(itemID);
                         monitorDataListViewModel.addMonitorData(newData);
                         numData--;
-                        showDataVisible();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

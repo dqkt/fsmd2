@@ -35,6 +35,14 @@ public class MonitorDataListViewModel extends AndroidViewModel {
         return monitorDataList;
     }
 
+    public int getNumMonitorDataFromItem(int itemID) {
+        return loggerDatabase.monitorDataModel().getNumMonitorDatasFromItem(itemID);
+    }
+
+    public long getLatestTimestamp(int itemID) {
+        return loggerDatabase.monitorDataModel().getLatestTimestamp(itemID);
+    }
+
     public void addMonitorData(MonitorData monitorData) {
         new InsertAsyncTask(loggerDatabase).execute(monitorData);
     }
