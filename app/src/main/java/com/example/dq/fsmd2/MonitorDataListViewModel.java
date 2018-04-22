@@ -7,7 +7,10 @@ import android.arch.lifecycle.ViewModel;
 import android.arch.lifecycle.ViewModelProvider;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
+import java.sql.Time;
+import java.util.Date;
 import java.util.List;
 
 public class MonitorDataListViewModel extends AndroidViewModel {

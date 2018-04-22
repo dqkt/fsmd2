@@ -5,5 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/colorAccent"
+    app:titleTextAppearance="@style/ItemToolbarTitleAppearance"
+    app:subtitleTextAppearance="@style/ItemToolbarSubtitleAppearance"
     app:titleTextColor="@android:color/white"
     app:subtitleTextColor="@android:color/white"/>

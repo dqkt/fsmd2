@@ -229,6 +229,7 @@ class ItemViewHolder extends RecyclerView.ViewHolder {
                 statusBackground = new TransitionDrawable(colors);
                 statusIndicator.setBackground(statusBackground);
                 statusBackground.startTransition(300);
+                ((MainActivity) context).showSummary();
             }
         };
 

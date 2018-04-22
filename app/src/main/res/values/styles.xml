@@ -49,4 +49,12 @@
         <item name="queryHint">@string/search_items_hint</item>
     </style>
 
+    <style name="ItemToolbarTitleAppearance" parent="@style/TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="ItemToolbarSubtitleAppearance" parent="@style/TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textSize">14sp</item>
+    </style>
+
 </resources>

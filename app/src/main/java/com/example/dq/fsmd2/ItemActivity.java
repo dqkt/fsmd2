@@ -46,6 +46,7 @@ public class ItemActivity extends AppCompatActivity {
 
     private ItemListViewModel itemListViewModel;
     private MonitorDataListViewModel monitorDataListViewModel;
+    private Observer<List<MonitorData>> monitorDataListObserver;
 
     private SimpleDateFormat formatter;
 
@@ -54,7 +55,6 @@ public class ItemActivity extends AppCompatActivity {
     private int colorFrom;
     private int colorTo;
     private TextView dateAdded;
-    private TextView ip;
     private TextView numData;
     private int numDataPoints;
     private TextView latestTimestamp;
@@ -91,6 +91,7 @@ public class ItemActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         setTitle(item.getName());
+        itemToolbar.setSubtitle(item.getIp());
 
         Drawable backIcon = itemToolbar.getNavigationIcon();
         backIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
@@ -118,8 +119,6 @@ public class ItemActivity extends AppCompatActivity {
 
         statusIndicator = (findViewById(R.id.layout_item_status)).findViewById(R.id.view_item_status);
         statusIndicator.setBackgroundColor(getResources().getColor(Item.getStatusColor(item.getStatus())));
-        ip = findViewById(R.id.textview_ip);
-        ip.setText(item.getIp());
 
         dateAdded = findViewById(R.id.textview_date_added);
         dateAdded.setText(formatter.format(item.getDateAdded()));
@@ -141,10 +140,12 @@ public class ItemActivity extends AppCompatActivity {
         ((DefaultItemAnimator) dataRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         dataRecyclerViewAdapter.notifyDataSetChanged();
 
-        monitorDataListViewModel = ViewModelProviders.of(this, new MonitorDataListViewModelFactory(this.getApplication(), itemID)).get(MonitorDataListViewModel.class);
-        monitorDataListViewModel.getMonitorDataList().observe(this, new Observer<List<MonitorData>>() {
+        final Date start = new Date();
+
+        monitorDataListObserver = new Observer<List<MonitorData>>() {
             @Override
             public void onChanged(@Nullable List<MonitorData> monitorDatas) {
+                Log.d("DEBUG", "Delay: " + (new Date().getTime() - start.getTime()));
                 dataRecyclerViewAdapter.setMonitorDatas(monitorDatas);
                 ColorDrawable[] colors = {new ColorDrawable(colorFrom), new ColorDrawable(colorTo)};
                 statusBackground = new TransitionDrawable(colors);
@@ -167,7 +168,10 @@ public class ItemActivity extends AppCompatActivity {
                 numData.setText(String.valueOf(numDataPoints + " data points"));
                 latestTimestamp.setText(formatter.format(new Date(latestTimestampData)));
             }
-        });
+        };
+        monitorDataListViewModel = ViewModelProviders.of(this, new MonitorDataListViewModelFactory(this.getApplication(), itemID)).get(MonitorDataListViewModel.class);
+        start.setTime(new Date().getTime());
+        monitorDataListViewModel.getMonitorDataList().observe(this, monitorDataListObserver);
 
         int safeColor = getResources().getColor(R.color.safeStatusColor);
         int vibratingColor = getResources().getColor(R.color.vibratingStatusColor);
@@ -201,35 +205,40 @@ public class ItemActivity extends AppCompatActivity {
     }
 
     private void populateWithTestData(final int num) {
-        handler.post(new Runnable() {
-            int numData = num;
-
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                MonitorData newData;
-                Random random = new Random();
+                handler.post(new Runnable() {
+                    int numData = num;
 
-                try {
-                    if (numData > 0) {
-                        newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                                random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                                random.nextDouble() * 90, random.nextDouble() * 180, new Date());
-                        VibrationData vibrationData = newData.getVibData();
-                        colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
-                        item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
-                                vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
-                        itemListViewModel.updateItem(item);
-                        colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
-                        newData.setItemID(itemID);
-                        monitorDataListViewModel.addMonitorData(newData);
-                        numData--;
+                    @Override
+                    public void run() {
+                        MonitorData newData;
+                        Random random = new Random();
+
+                        try {
+                            if (numData > 0) {
+                                newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
+                                        random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
+                                        random.nextDouble() * 90, random.nextDouble() * 180, new Date());
+                                VibrationData vibrationData = newData.getVibData();
+                                colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                                item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
+                                        vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
+                                itemListViewModel.updateItem(item);
+                                colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                                newData.setItemID(itemID);
+                                monitorDataListViewModel.addMonitorData(newData);
+                                numData--;
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            handler.postDelayed(this, 1000);
+                        }
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    handler.postDelayed(this, 1000);
-                }
+                });
             }
-        });
+        }).start();
     }
 }
