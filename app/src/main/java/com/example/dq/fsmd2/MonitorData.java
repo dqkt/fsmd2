@@ -5,6 +5,7 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.Query;
@@ -41,10 +42,14 @@ public class MonitorData implements Serializable {
 
     private int itemID;
 
+    @Ignore
+    private boolean isViewExpanded;
+
     public MonitorData() {
         vibData = null;
         posData = null;
         timeData = null;
+        isViewExpanded = false;
     }
 
     public MonitorData(double peakXVib, double peakYVib, double peakZVib,
@@ -54,6 +59,7 @@ public class MonitorData implements Serializable {
         vibData = new VibrationData(peakXVib, peakYVib, peakZVib, avgXVib, avgYVib, avgZVib);
         posData = new PositionData(longitude, latitude);
         timeData = date;
+        isViewExpanded = false;
     }
 
     public int getMonitorDataID() {
@@ -92,6 +98,15 @@ public class MonitorData implements Serializable {
     }
     public void setItemID(int itemID) {
         this.itemID = itemID;
+    }
+
+
+    public boolean isViewExpanded() {
+        return isViewExpanded;
+    }
+
+    public void setViewExpanded(boolean viewExpanded) {
+        isViewExpanded = viewExpanded;
     }
 
     @Dao

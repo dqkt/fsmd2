@@ -3,8 +3,6 @@ package com.example.dq.fsmd2;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
-import android.support.transition.ChangeBounds;
-import android.support.transition.TransitionManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -13,15 +11,12 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -30,19 +25,19 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
 
     private Context context;
     private List<MonitorData> monitorDataList;
-    private SimpleDateFormat formatter;
     private LayoutInflater inflater;
 
     private DecimalFormat vibrationFormat;
+    private DecimalFormat detailedVibrationFormat;
     private DecimalFormat positionFormat;
 
     public DataRecyclerViewAdapter(Context context, List<MonitorData> monitorDataList) {
         this.context = context;
         this.monitorDataList = monitorDataList;
-        this.formatter = new SimpleDateFormat("h:mm a z 'on' MMM. d, yyyy", Locale.US);
         this.inflater = LayoutInflater.from(context);
 
-        this.vibrationFormat = new DecimalFormat("0.##");
+        this.vibrationFormat = new DecimalFormat("0.00");
+        this.detailedVibrationFormat = new DecimalFormat("0.0000");
         this.positionFormat = new DecimalFormat("0.####");
     }
 
@@ -76,14 +71,21 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
 
         holder.vibrationLevel.setText(vibrationMagnitudeDisplay);
         holder.position.setText(positionDisplay);
-        holder.time.setText(DateUtils.getRelativeTimeSpanString(timeData.getTime(),
-                System.currentTimeMillis(), 0, DateUtils.FORMAT_ABBREV_ALL));
 
-        holder.xVibrationLevel.setText(String.valueOf("X: " + vibrationFormat.format(vibrationData.getAvgXVibration()) + " g"));
-        holder.yVibrationLevel.setText(String.valueOf("Y: " + vibrationFormat.format(vibrationData.getAvgYVibration()) + " g"));
-        holder.zVibrationLevel.setText(String.valueOf("Z: " + vibrationFormat.format(vibrationData.getAvgZVibration()) + " g"));
+        if (currentMonitorData.isViewExpanded()) {
+            holder.time.setText(holder.formatter.format(timeData));
+        } else {
+            holder.time.setText(DateUtils.getRelativeTimeSpanString(timeData.getTime(),
+                    System.currentTimeMillis(), 0, DateUtils.FORMAT_ABBREV_ALL));
+        }
 
-        holder.timeReceived.setText(formatter.format(timeData));
+        holder.avgXVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getAvgXVibration()));
+        holder.avgYVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getAvgYVibration()));
+        holder.avgZVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getAvgZVibration()));
+
+        holder.peakXVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getPeakXVibration()));
+        holder.peakYVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getPeakYVibration()));
+        holder.peakZVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getPeakZVibration()));
     }
 
     @Override
@@ -98,27 +100,31 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
 
 class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-    private int originalHeight = 0;
-    private boolean isViewExpanded = false;
+    private int originalHeight;
 
     public MonitorData monitorData;
 
     public LinearLayout overallLayout;
     public LinearLayout regularLayout;
-    public LinearLayout detailedLayout;
+    public RelativeLayout detailedLayout;
 
-    public LinearLayout swipeLayout;
     public TextView vibrationLevel;
     public TextView position;
     public TextView time;
 
-    public TextView xVibrationLevel;
-    public TextView yVibrationLevel;
-    public TextView zVibrationLevel;
-    public TextView timeReceived;
+    public SimpleDateFormat formatter;
+
+    public TextView avgXVibrationLevel;
+    public TextView avgYVibrationLevel;
+    public TextView avgZVibrationLevel;
+    public TextView peakXVibrationLevel;
+    public TextView peakYVibrationLevel;
+    public TextView peakZVibrationLevel;
 
     public DataViewHolder(View view) {
         super(view);
+
+        originalHeight = 0;
 
         overallLayout = (LinearLayout) view;
 
@@ -129,10 +135,15 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
         position = regularLayout.findViewById(R.id.textview_position);
         time = regularLayout.findViewById(R.id.textview_time);
 
-        xVibrationLevel = regularLayout.findViewById(R.id.textview_x_vib);
-        yVibrationLevel = regularLayout.findViewById(R.id.textview_y_vib);
-        zVibrationLevel = regularLayout.findViewById(R.id.textview_z_vib);
-        timeReceived = regularLayout.findViewById(R.id.textview_time_received);
+        formatter = new SimpleDateFormat("h:mm:ss a z'\n'M/d/yyyy", Locale.US);
+
+        avgXVibrationLevel = regularLayout.findViewById(R.id.textview_avg_x_vib);
+        avgYVibrationLevel = regularLayout.findViewById(R.id.textview_avg_y_vib);
+        avgZVibrationLevel = regularLayout.findViewById(R.id.textview_avg_z_vib);
+
+        peakXVibrationLevel = regularLayout.findViewById(R.id.textview_peak_x_vib);
+        peakYVibrationLevel = regularLayout.findViewById(R.id.textview_peak_y_vib);
+        peakZVibrationLevel = regularLayout.findViewById(R.id.textview_peak_z_vib);
 
         regularLayout.setOnClickListener(this);
     }
@@ -144,19 +155,22 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
         }
 
         ValueAnimator valueAnimator;
-        if (!isViewExpanded) {
+        if (!monitorData.isViewExpanded()) {
+            time.setText(formatter.format(monitorData.getTimeData()));
             detailedLayout.setVisibility(View.VISIBLE);
             detailedLayout.setEnabled(true);
-            isViewExpanded = true;
-            valueAnimator = ValueAnimator.ofInt(originalHeight, originalHeight + (int) (originalHeight * 2.0));
+            monitorData.setViewExpanded(true);
+            valueAnimator = ValueAnimator.ofInt(originalHeight, originalHeight + (int) (originalHeight * 1.8));
         } else {
-            isViewExpanded = false;
-            valueAnimator = ValueAnimator.ofInt(originalHeight + (int) (originalHeight * 2.0), originalHeight);
+            time.setText(DateUtils.getRelativeTimeSpanString(monitorData.getTimeData().getTime(),
+                    System.currentTimeMillis(), 0, DateUtils.FORMAT_ABBREV_ALL));
+            monitorData.setViewExpanded(false);
+            valueAnimator = ValueAnimator.ofInt(originalHeight + (int) (originalHeight * 1.8), originalHeight);
 
-            Animation a = new AlphaAnimation(1.00f, 0.00f);
+            Animation detailsFade = new AlphaAnimation(1.00f, 0.00f);
 
-            a.setDuration(200);
-            a.setAnimationListener(new Animation.AnimationListener() {
+            detailsFade.setDuration(200);
+            detailsFade.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
 
@@ -174,17 +188,17 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
                 }
             });
 
-            detailedLayout.startAnimation(a);
+            detailedLayout.startAnimation(detailsFade);
         }
         valueAnimator.setDuration(200);
         valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             public void onAnimationUpdate(ValueAnimator animation) {
-                Integer value = (Integer) animation.getAnimatedValue();
-                view.getLayoutParams().height = value.intValue();
+                view.getLayoutParams().height = (Integer) animation.getAnimatedValue();
                 view.requestLayout();
             }
         });
         valueAnimator.start();
     }
+
 }
