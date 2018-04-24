@@ -11,6 +11,7 @@ import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.TypeConverter;
 import android.arch.persistence.room.TypeConverters;
+import android.util.Log;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -100,13 +101,13 @@ public class MonitorData implements Serializable {
         this.itemID = itemID;
     }
 
-
     public boolean isViewExpanded() {
         return isViewExpanded;
     }
 
     public void setViewExpanded(boolean viewExpanded) {
         isViewExpanded = viewExpanded;
+        Log.d("DEBUG", "set view expanded");
     }
 
     @Dao

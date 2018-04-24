@@ -89,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RelativeLayout itemAreaLayout;
     private ItemRecyclerViewAdapter itemRecyclerViewAdapter;
+    private LinearLayoutManager itemLinearLayoutManager;
     private SwipeRefreshLayout itemListRefreshLayout;
     private RecyclerView itemRecyclerView;
     private TextView noItemsView;
@@ -222,7 +223,8 @@ public class MainActivity extends AppCompatActivity {
 
         itemRecyclerViewAdapter = new ItemRecyclerViewAdapter(this, new ArrayList<Item>(), itemListViewModel, monitorDataListViewModel);
         itemRecyclerView.setAdapter(itemRecyclerViewAdapter);
-        itemRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        itemLinearLayoutManager = new LinearLayoutManager(this);
+        itemRecyclerView.setLayoutManager(itemLinearLayoutManager);
         itemRecyclerViewAdapter.notifyDataSetChanged();
 
         itemListObserver = new Observer<List<Item>>() {
@@ -242,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
         itemListRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                itemRecyclerViewAdapter.notifyDataSetChanged();
+                itemRecyclerViewAdapter.notifyItemRangeChanged(0, itemRecyclerViewAdapter.getItemCount());
                 itemListRefreshLayout.setRefreshing(false);
                 showSummary();
             }

@@ -181,7 +181,7 @@ public class ItemActivity extends AppCompatActivity {
         dataListRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                dataRecyclerViewAdapter.notifyDataSetChanged();
+                dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataRecyclerViewAdapter.getItemCount());
                 dataListRefreshLayout.setRefreshing(false);
             }
         });

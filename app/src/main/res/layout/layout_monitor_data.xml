@@ -74,7 +74,7 @@
                     <TextView
                         android:singleLine="true"
                         android:textSize="14sp"
-                        android:textColor="@drawable/secondary_text_color"
+                        android:textColor="@color/secondary_text_color"
                         android:fontFamily="sans-serif"
                         android:layout_height="0dp"
                         android:layout_width="match_parent"
@@ -121,28 +121,28 @@
                                 android:layout_height="wrap_content"
                                 android:layout_width="wrap_content"
                                 android:layout_marginBottom="10dp"
-                                android:textColor="@drawable/secondary_text_color"
+                                android:textColor="@color/secondary_text_color"
                                 android:textSize="16sp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="X"
-                                android:textColor="@drawable/secondary_text_color"
+                                android:textColor="@color/secondary_text_color"
                                 android:textSize="16sp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Y"
-                                android:textColor="@drawable/secondary_text_color"
+                                android:textColor="@color/secondary_text_color"
                                 android:textSize="16sp"/>
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Z"
-                                android:textColor="@drawable/secondary_text_color"
+                                android:textColor="@color/secondary_text_color"
                                 android:textSize="16sp"/>
                         </LinearLayout>
 
@@ -157,7 +157,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginBottom="10dp"
                                 android:text="Avg. (g)"
-                                android:textColor="@drawable/secondary_text_color"
+                                android:textColor="@color/secondary_text_color"
                                 android:textSize="16sp"/>
 
                             <TextView
@@ -193,7 +193,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_marginBottom="10dp"
                                 android:text="Peak (g)"
-                                android:textColor="@drawable/secondary_text_color"
+                                android:textColor="@color/secondary_text_color"
                                 android:textSize="16sp"/>
 
                             <TextView
@@ -222,15 +222,35 @@
             </RelativeLayout>
         </LinearLayout>
 
-        <TextView
+        <FrameLayout
             android:layout_gravity="center"
             android:gravity="center"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="12"
-            android:textColor="@drawable/secondary_text_color"
-            android:fontFamily="sans-serif-light"
-            android:id="@+id/textview_time" />
+            android:layout_weight="12">
+
+            <TextView
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/secondary_text_color"
+                android:textSize="14sp"
+                android:visibility="visible"
+                android:id="@+id/textview_time_relative"/>
+
+            <TextView
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/secondary_text_color"
+                android:textSize="14sp"
+                android:visibility="gone"
+                android:id="@+id/textview_time_absolute"/>
+        </FrameLayout>
     </LinearLayout>
 
     <View

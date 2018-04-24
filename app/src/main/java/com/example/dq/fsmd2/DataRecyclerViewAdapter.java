@@ -1,19 +1,28 @@
 package com.example.dq.fsmd2;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.support.v7.widget.RecyclerView;
+import android.text.Layout;
 import android.text.format.DateUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
+import android.widget.ViewSwitcher;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -44,7 +53,7 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
     @Override
     public DataViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         final LinearLayout dataLayout = (LinearLayout) inflater.inflate(R.layout.layout_monitor_data, parent, false);
-        return new DataViewHolder(dataLayout);
+        return new DataViewHolder(dataLayout, context);
     }
 
     @Override
@@ -72,11 +81,15 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
         holder.vibrationLevel.setText(vibrationMagnitudeDisplay);
         holder.position.setText(positionDisplay);
 
+        holder.relativeTime.setText(DateUtils.getRelativeTimeSpanString(timeData.getTime(),
+                System.currentTimeMillis(), 0, DateUtils.FORMAT_ABBREV_ALL));
+        holder.absoluteTime.setText(holder.formatter.format(timeData));
         if (currentMonitorData.isViewExpanded()) {
-            holder.time.setText(holder.formatter.format(timeData));
+            holder.absoluteTime.setVisibility(View.VISIBLE);
+            holder.relativeTime.setVisibility(View.GONE);
         } else {
-            holder.time.setText(DateUtils.getRelativeTimeSpanString(timeData.getTime(),
-                    System.currentTimeMillis(), 0, DateUtils.FORMAT_ABBREV_ALL));
+            holder.absoluteTime.setVisibility(View.GONE);
+            holder.relativeTime.setVisibility(View.VISIBLE);
         }
 
         holder.avgXVibrationLevel.setText(detailedVibrationFormat.format(vibrationData.getAvgXVibration()));
@@ -100,7 +113,7 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
 
 class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-    private int originalHeight;
+    public int originalHeight;
 
     public MonitorData monitorData;
 
@@ -110,7 +123,8 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
 
     public TextView vibrationLevel;
     public TextView position;
-    public TextView time;
+    public TextView relativeTime;
+    public TextView absoluteTime;
 
     public SimpleDateFormat formatter;
 
@@ -121,7 +135,7 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
     public TextView peakYVibrationLevel;
     public TextView peakZVibrationLevel;
 
-    public DataViewHolder(View view) {
+    public DataViewHolder(View view, final Context context) {
         super(view);
 
         originalHeight = 0;
@@ -133,9 +147,10 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
 
         vibrationLevel = regularLayout.findViewById(R.id.textview_vibration_level);
         position = regularLayout.findViewById(R.id.textview_position);
-        time = regularLayout.findViewById(R.id.textview_time);
+        relativeTime = regularLayout.findViewById(R.id.textview_time_relative);
+        absoluteTime = regularLayout.findViewById(R.id.textview_time_absolute);
 
-        formatter = new SimpleDateFormat("h:mm:ss a z'\n'M/d/yyyy", Locale.US);
+        formatter = new SimpleDateFormat("h:mm a z'\n'M/d/yyyy", Locale.US);
 
         avgXVibrationLevel = regularLayout.findViewById(R.id.textview_avg_x_vib);
         avgYVibrationLevel = regularLayout.findViewById(R.id.textview_avg_y_vib);
@@ -156,20 +171,38 @@ class DataViewHolder extends RecyclerView.ViewHolder implements View.OnClickList
 
         ValueAnimator valueAnimator;
         if (!monitorData.isViewExpanded()) {
-            time.setText(formatter.format(monitorData.getTimeData()));
             detailedLayout.setVisibility(View.VISIBLE);
+            relativeTime.animate().setDuration(200).alpha(0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    relativeTime.setVisibility(View.GONE);
+                }
+            });
+
+            absoluteTime.setVisibility(View.VISIBLE);
+            absoluteTime.setAlpha(0);
+            absoluteTime.animate().setDuration(200).alpha(1).setListener(null);
             detailedLayout.setEnabled(true);
             monitorData.setViewExpanded(true);
             valueAnimator = ValueAnimator.ofInt(originalHeight, originalHeight + (int) (originalHeight * 1.8));
         } else {
-            time.setText(DateUtils.getRelativeTimeSpanString(monitorData.getTimeData().getTime(),
-                    System.currentTimeMillis(), 0, DateUtils.FORMAT_ABBREV_ALL));
             monitorData.setViewExpanded(false);
             valueAnimator = ValueAnimator.ofInt(originalHeight + (int) (originalHeight * 1.8), originalHeight);
 
             Animation detailsFade = new AlphaAnimation(1.00f, 0.00f);
-
             detailsFade.setDuration(200);
+
+            absoluteTime.animate().setDuration(200).alpha(0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    absoluteTime.setVisibility(View.GONE);
+                }
+            });
+
+            relativeTime.setVisibility(View.VISIBLE);
+            relativeTime.setAlpha(0);
+            relativeTime.animate().setDuration(200).alpha(1).setListener(null);
+
             detailsFade.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {

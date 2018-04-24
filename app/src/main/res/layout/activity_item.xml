@@ -94,7 +94,7 @@
                 android:text="@string/no_data_found"
                 android:textSize="20sp"
                 android:textAlignment="center"
-                android:textColor="@drawable/secondary_text_color"
+                android:textColor="@color/secondary_text_color"
                 android:fontFamily="sans-serif-light"
                 android:layout_marginTop="50dp"
                 android:layout_width="200dp"
