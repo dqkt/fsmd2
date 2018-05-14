@@ -10,16 +10,16 @@ import java.util.Scanner;
  */
 
 public class VibrationData {
-    private double peakXVibration;
-    private double peakYVibration;
-    private double peakZVibration;
+    private float peakXVibration;
+    private float peakYVibration;
+    private float peakZVibration;
 
-    private double avgXVibration;
-    private double avgYVibration;
-    private double avgZVibration;
+    private float avgXVibration;
+    private float avgYVibration;
+    private float avgZVibration;
 
-    private double peakVibMagnitude;
-    private double avgVibMagnitude;
+    private float peakVibMagnitude;
+    private float avgVibMagnitude;
 
     public VibrationData() {
         peakXVibration = 0;
@@ -31,8 +31,8 @@ public class VibrationData {
         avgZVibration = 0;
     }
 
-    public VibrationData(double peakXVib, double peakYVib, double peakZVib,
-                         double avgXVib, double avgYVib, double avgZVib) {
+    public VibrationData(float peakXVib, float peakYVib, float peakZVib,
+                         float avgXVib, float avgYVib, float avgZVib) {
         this.peakXVibration = peakXVib;
         this.peakYVibration = peakYVib;
         this.peakZVibration = peakZVib;
@@ -46,9 +46,9 @@ public class VibrationData {
         this.avgVibMagnitude = calculateVibrationMagnitude(avgXVib, avgYVib, avgZVib);
     }
 
-    public VibrationData(double peakXVib, double peakYVib, double peakZVib,
-                         double avgXVib, double avgYVib, double avgZVib,
-                         double peakVibMagnitude, double avgVibMagnitude) {
+    public VibrationData(float peakXVib, float peakYVib, float peakZVib,
+                         float avgXVib, float avgYVib, float avgZVib,
+                         float peakVibMagnitude, float avgVibMagnitude) {
         this.peakXVibration = peakXVib;
         this.peakYVibration = peakYVib;
         this.peakZVibration = peakZVib;
@@ -62,35 +62,35 @@ public class VibrationData {
         this.avgVibMagnitude = avgVibMagnitude;
     }
 
-    public void setPeakXVibration(double peakXVib) { this.peakXVibration = peakXVib; }
-    public double getPeakXVibration() { return peakXVibration; }
-    public void setPeakYVibration(double peakYVib) { this.peakYVibration = peakYVib; }
-    public double getPeakYVibration() { return peakYVibration; }
-    public void setPeakZVibration(double peakZVib) { this.peakZVibration = peakZVib; }
-    public double getPeakZVibration() { return peakZVibration; }
+    public void setPeakXVibration(float peakXVib) { this.peakXVibration = peakXVib; }
+    public float getPeakXVibration() { return peakXVibration; }
+    public void setPeakYVibration(float peakYVib) { this.peakYVibration = peakYVib; }
+    public float getPeakYVibration() { return peakYVibration; }
+    public void setPeakZVibration(float peakZVib) { this.peakZVibration = peakZVib; }
+    public float getPeakZVibration() { return peakZVibration; }
 
-    public void setAvgXVibration(double avgXVib) { this.avgXVibration = avgXVib; }
-    public double getAvgXVibration() { return avgXVibration; }
-    public void setAvgYVibration(double avgYVib) { this.avgYVibration = avgYVib; }
-    public double getAvgYVibration() { return avgYVibration; }
-    public void setAvgZVibration(double avgZVib) { this.avgZVibration = avgZVib; }
-    public double getAvgZVibration() { return avgZVibration; }
+    public void setAvgXVibration(float avgXVib) { this.avgXVibration = avgXVib; }
+    public float getAvgXVibration() { return avgXVibration; }
+    public void setAvgYVibration(float avgYVib) { this.avgYVibration = avgYVib; }
+    public float getAvgYVibration() { return avgYVibration; }
+    public void setAvgZVibration(float avgZVib) { this.avgZVibration = avgZVib; }
+    public float getAvgZVibration() { return avgZVibration; }
 
-    public double getPeakVibMagnitude() {
+    public float getPeakVibMagnitude() {
         return peakVibMagnitude;
     }
-    public void setPeakVibMagnitude(double peakVibMagnitude) {
+    public void setPeakVibMagnitude(float peakVibMagnitude) {
         this.peakVibMagnitude = peakVibMagnitude;
     }
-    public double getAvgVibMagnitude() {
+    public float getAvgVibMagnitude() {
         return avgVibMagnitude;
     }
-    public void setAvgVibMagnitude(double avgVibMagnitude) {
+    public void setAvgVibMagnitude(float avgVibMagnitude) {
         this.avgVibMagnitude = avgVibMagnitude;
     }
 
-    public static double calculateVibrationMagnitude(double xVibration, double yVibration, double zVibration) {
-        return Math.sqrt(Math.pow(xVibration, 2) + Math.pow(yVibration, 2) + Math.pow(zVibration, 2));
+    public static float calculateVibrationMagnitude(float xVibration, float yVibration, float zVibration) {
+        return (float) Math.sqrt(Math.pow(xVibration, 2) + Math.pow(yVibration, 2) + Math.pow(zVibration, 2));
     }
 }
 
@@ -100,8 +100,8 @@ class VibrationDataConverter {
     public static VibrationData toVibrationData(String value) {
         Scanner sc = new Scanner(value);
         sc.useDelimiter("\t");
-        return new VibrationData(sc.nextDouble(), sc.nextDouble(), sc.nextDouble(), sc.nextDouble(),
-                sc.nextDouble(), sc.nextDouble(), sc.nextDouble(), sc.nextDouble());
+        return new VibrationData(sc.nextFloat(), sc.nextFloat(), sc.nextFloat(), sc.nextFloat(),
+                sc.nextFloat(), sc.nextFloat(), sc.nextFloat(), sc.nextFloat());
     }
 
     @TypeConverter

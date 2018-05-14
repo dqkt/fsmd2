@@ -38,6 +38,10 @@ public class MonitorDataListViewModel extends AndroidViewModel {
         return monitorDataList;
     }
 
+    public MonitorData.MonitorDataDao getMonitorDataModel() {
+        return loggerDatabase.monitorDataModel();
+    }
+
     public int getNumMonitorDataFromItem(int itemID) {
         return loggerDatabase.monitorDataModel().getNumMonitorDatasFromItem(itemID);
     }

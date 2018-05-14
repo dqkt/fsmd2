@@ -8,21 +8,16 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.support.v7.widget.RecyclerView;
-import android.text.Layout;
 import android.text.format.DateUtils;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextSwitcher;
 import android.widget.TextView;
-import android.widget.ViewSwitcher;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -69,10 +64,10 @@ public class DataRecyclerViewAdapter extends RecyclerView.Adapter<DataViewHolder
         PositionData positionData = currentMonitorData.getPosData();
         Date timeData = currentMonitorData.getTimeData();
 
-        double vibrationMagnitude = vibrationData.getAvgVibMagnitude();
+        float vibrationMagnitude = vibrationData.getAvgVibMagnitude();
         String vibrationMagnitudeDisplay = vibrationFormat.format(vibrationMagnitude) + " g";
 
-        int statusCode = Item.determineStatus(vibrationMagnitude);
+        byte statusCode = Item.determineStatus(vibrationMagnitude);
         statusIndicator.setColor(context.getResources().getColor(Item.getStatusColor(statusCode)));
 
         String positionDisplay = positionFormat.format(positionData.getLatitude()) + "\u00b0 N, "

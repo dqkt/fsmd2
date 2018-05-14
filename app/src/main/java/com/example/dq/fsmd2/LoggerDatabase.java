@@ -5,7 +5,7 @@ import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
 import android.content.Context;
 
-@Database(entities = {Item.class, MonitorData.class}, version = 2)
+@Database(entities = {Item.class, MonitorData.class}, version = 3)
 public abstract class LoggerDatabase extends RoomDatabase {
     private static LoggerDatabase INSTANCE;
 

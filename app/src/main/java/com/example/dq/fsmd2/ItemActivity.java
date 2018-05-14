@@ -5,6 +5,7 @@ import android.animation.ValueAnimator;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
@@ -23,9 +24,14 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.SpannableStringBuilder;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,7 +74,7 @@ public class ItemActivity extends AppCompatActivity {
     private TextView noDataView;
 
     private Item item;
-    private int itemID;
+    private byte itemID;
 
     private Toolbar itemToolbar;
 
@@ -107,12 +113,36 @@ public class ItemActivity extends AppCompatActivity {
         populateWithTestData(10);
     }
 
-    /*
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_item, menu);
+        return true;
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
+        super.onOptionsItemSelected(item);
 
+        switch (item.getItemId()) {
+            case R.id.export_data:
+                new ItemReport(this, this.item, monitorDataListViewModel.getMonitorDataModel()).toCsv();
+        }
+
+        return true;
     }
-    */
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        if (requestCode == ItemReport.MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            } else {
+                Toast.makeText(this, "Access to documents is required to export data.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
     private void setUpSummary() {
         formatter = new SimpleDateFormat("h:mm a z 'on' MMM. d, yyyy", Locale.US);
@@ -218,9 +248,9 @@ public class ItemActivity extends AppCompatActivity {
 
                         try {
                             if (numData > 0) {
-                                newData = new MonitorData(random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                                        random.nextDouble() * 100, random.nextDouble() * 100, random.nextDouble() * 100,
-                                        random.nextDouble() * 90, random.nextDouble() * 180, new Date());
+                                newData = new MonitorData(random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50,
+                                        random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50,
+                                        random.nextFloat() * 90, random.nextFloat() * 180, new Date());
                                 VibrationData vibrationData = newData.getVibData();
                                 colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
                                 item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),

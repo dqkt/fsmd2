@@ -27,21 +27,13 @@ import java.util.List;
 public class MonitorData implements Serializable {
 
     @PrimaryKey(autoGenerate = true)
-    private int monitorDataID;
-
-    public void setVibData(VibrationData vibData) {
-        this.vibData = vibData;
-    }
-
-    public void setPosData(PositionData posData) {
-        this.posData = posData;
-    }
+    private byte monitorDataID;
 
     private VibrationData vibData;
     private PositionData posData;
     private Date timeData;
 
-    private int itemID;
+    private byte itemID;
 
     @Ignore
     private boolean isViewExpanded;
@@ -53,9 +45,9 @@ public class MonitorData implements Serializable {
         isViewExpanded = false;
     }
 
-    public MonitorData(double peakXVib, double peakYVib, double peakZVib,
-                       double avgXVib, double avgYVib, double avgZVib,
-                       double longitude, double latitude,
+    public MonitorData(float peakXVib, float peakYVib, float peakZVib,
+                       float avgXVib, float avgYVib, float avgZVib,
+                       float longitude, float latitude,
                        Date date) {
         vibData = new VibrationData(peakXVib, peakYVib, peakZVib, avgXVib, avgYVib, avgZVib);
         posData = new PositionData(longitude, latitude);
@@ -63,15 +55,23 @@ public class MonitorData implements Serializable {
         isViewExpanded = false;
     }
 
-    public int getMonitorDataID() {
+    public byte getMonitorDataID() {
         return monitorDataID;
     }
-    public void setMonitorDataID(int monitorDataID) {
+    public void setMonitorDataID(byte monitorDataID) {
         this.monitorDataID = monitorDataID;
     }
 
-    public void setVibData(double peakXVib, double peakYVib, double peakZVib,
-                                 double avgXVib, double avgYVib, double avgZVib) {
+    public void setVibData(VibrationData vibData) {
+        this.vibData = vibData;
+    }
+
+    public void setPosData(PositionData posData) {
+        this.posData = posData;
+    }
+
+    public void setVibData(float peakXVib, float peakYVib, float peakZVib,
+                                 float avgXVib, float avgYVib, float avgZVib) {
         vibData.setPeakXVibration(peakXVib);
         vibData.setPeakYVibration(peakYVib);
         vibData.setPeakZVibration(peakZVib);
@@ -82,7 +82,7 @@ public class MonitorData implements Serializable {
     }
 
     public VibrationData getVibData() { return vibData; }
-    public void setPosData(double longitude, double latitude) {
+    public void setPosData(float longitude, float latitude) {
         posData.setLongitude(longitude);
         posData.setLatitude(latitude);
     }
@@ -94,10 +94,10 @@ public class MonitorData implements Serializable {
     }
     public Date getTimeData() { return timeData; }
 
-    public int getItemID() {
+    public byte getItemID() {
         return itemID;
     }
-    public void setItemID(int itemID) {
+    public void setItemID(byte itemID) {
         this.itemID = itemID;
     }
 
@@ -107,7 +107,6 @@ public class MonitorData implements Serializable {
 
     public void setViewExpanded(boolean viewExpanded) {
         isViewExpanded = viewExpanded;
-        Log.d("DEBUG", "set view expanded");
     }
 
     @Dao
@@ -126,6 +125,9 @@ public class MonitorData implements Serializable {
 
         @Query("SELECT COUNT(*) from monitordata WHERE itemID IS :itemID")
         int getNumMonitorDatasFromItem(int itemID);
+
+        @Query("SELECT * FROM monitordata WHERE itemID IS :itemID ORDER BY timeData DESC")
+        List<MonitorData> getAllCurrentMonitorDatasFromItem(int itemID);
 
         @Query("SELECT * FROM monitordata WHERE itemID IS :itemID ORDER BY timeData DESC")
         LiveData<List<MonitorData>> getAllMonitorDatasFromItem(int itemID);

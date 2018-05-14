@@ -29,36 +29,40 @@ public class Item implements Serializable {
     private static final String DEFAULT_NAME = "ITEM #";
     private static final String DEFAULT_IP = "0.0.0.0";
 
-    public static final int NO_STATUS        = -1;
-    public static final int SAFE_STATUS      = 0;
-    public static final int VIBRATING_STATUS = 1;
-    public static final int LOST_STATUS      = 2;
+    public static final byte NO_STATUS        = -1;
+    public static final byte SAFE_STATUS      = 0;
+    public static final byte VIBRATING_STATUS = 1;
+    public static final byte LOST_STATUS      = 2;
 
-    public static final int LOST_THRESHOLD = 130;
-    public static final int VIB_THRESHOLD = 100;
+    public static final float LOST_THRESHOLD = 50;
+    public static final float VIB_THRESHOLD = 40;
 
-    @PrimaryKey(autoGenerate = true)
-    private int itemID;
+    @PrimaryKey
+    private byte itemID;
     private String name;
     private String ip;
     private Date dateAdded;
 
-    private int status;
+    private byte status;
 
-    public Item() {
+    @Ignore
+    public Item(byte itemID) {
+        this.itemID = itemID;
         this.name = DEFAULT_NAME;
-        this.ip = "0.0.0.0";
+        this.ip = DEFAULT_IP;
         this.status = NO_STATUS;
         this.dateAdded = new Date();
     }
 
-    public Item(String name, String ip) {
+    public Item(byte itemID, String name, String ip) {
+        this.itemID = itemID;
         this.name = name;
         this.ip = ip;
         this.status = NO_STATUS;
         this.dateAdded = new Date();
     }
 
+    @Ignore
     public Item(String name, String ip, Date dateAdded) {
         this.name = name;
         this.ip = ip;
@@ -66,17 +70,10 @@ public class Item implements Serializable {
         this.dateAdded = dateAdded;
     }
 
-    public Item(Item other) {
-        this.name = new String(other.name);
-        this.ip = new String(other.ip);
-        this.status = other.status;
-        this.dateAdded = new Date(other.dateAdded.getTime());
-    }
-
-    public int getItemID() {
+    public byte getItemID() {
         return itemID;
     }
-    public void setItemID(int itemID) {
+    public void setItemID(byte itemID) {
         this.itemID = itemID;
     }
 
@@ -86,12 +83,12 @@ public class Item implements Serializable {
     public String getIp() { return ip; }
     public Date getDateAdded() { return dateAdded; }
     public void setDateAdded(Date dateAdded) { this.dateAdded = dateAdded; }
-    public void setStatus(int status) {
+    public void setStatus(byte status) {
         this.status = status;
     }
-    public int getStatus() { return status; }
+    public byte getStatus() { return status; }
 
-    public static int getStatusColor(int status) {
+    public static int getStatusColor(byte status) {
         switch (status) {
             case NO_STATUS:
                 return R.color.noStatusColor;
@@ -105,7 +102,7 @@ public class Item implements Serializable {
         return R.color.noStatusColor;
     }
 
-    public static int determineStatus(double vibLevel) {
+    public static byte determineStatus(double vibLevel) {
         if (vibLevel > LOST_THRESHOLD) {
             return LOST_STATUS;
         } else if (vibLevel > VIB_THRESHOLD) {

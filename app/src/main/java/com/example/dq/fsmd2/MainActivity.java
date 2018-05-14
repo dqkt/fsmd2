@@ -1,15 +1,21 @@
 package com.example.dq.fsmd2;
 
+import android.Manifest;
+import android.app.ActivityManager;
 import android.app.SearchManager;
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TextInputEditText;
@@ -36,6 +42,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -53,11 +60,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MonitorDataObserverService.Callback {
+
+    private Intent serviceIntent;
+    private ServiceConnection serviceConnection;
+    private MonitorDataObserverService monitorDataObserverService;
 
     private ItemListViewModel itemListViewModel;
     private MonitorDataListViewModel monitorDataListViewModel;
@@ -126,21 +138,22 @@ public class MainActivity extends AppCompatActivity {
         setUpAddItemButtons();
         setUpNavigationDrawer();
 
-        new RequestTask().execute("http://svshizzle.com/test/getStatement.php?test=klopt", "1");
+        serviceIntent = new Intent(MainActivity.this, MonitorDataObserverService.class);
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName className, IBinder service) {
+                Toast.makeText(MainActivity.this, "onServiceConnected called", Toast.LENGTH_SHORT).show();
+                // We've binded to LocalService, cast the IBinder and get LocalService instance
+                MonitorDataObserverService.LocalBinder binder = (MonitorDataObserverService.LocalBinder) service;
+                monitorDataObserverService = binder.getServiceInstance(); //Get instance of your service!
+                monitorDataObserverService.registerClient(MainActivity.this); //Activity register in the service as client for callabcks!
+            }
 
-        /*
-        //This gets the saved IP address, and puts it in the variable, if not set, then it starts the Setting activity.
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        ip = preferences.getString("IP", "NONE");
-        if (ip.equals("NONE")) {//There is no IP set.
-            Intent intent = new Intent(this, Setting.class);
-            startActivity(intent);
-        } else {
-
-            //requestAll();
-            //This is when the app is started, you can already retrieve data.
-        }
-        */
+            @Override
+            public void onServiceDisconnected(ComponentName arg0) {
+                Toast.makeText(MainActivity.this, "onServiceDisconnected called", Toast.LENGTH_SHORT).show();
+            }
+        };
     }
 
     @Override
@@ -232,6 +245,11 @@ public class MainActivity extends AppCompatActivity {
             public void onChanged(@Nullable List<Item> items) {
                 itemRecyclerViewAdapter.setItems(items);
                 itemRecyclerViewAdapter.notifyItemRangeChanged(0, numItems, new ArrayList<>());
+                if (itemRecyclerViewAdapter.getItemCount() == 0) {
+                    showNoItems();
+                } else {
+                    showItemsVisible();
+                }
             }
         };
         itemListViewModel.getItemList().observe(this, itemListObserver);
@@ -393,7 +411,28 @@ public class MainActivity extends AppCompatActivity {
             collectingDataSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (buttonView.isChecked()){
+                        startService(serviceIntent); //Starting the service
+                        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE); //Binding to the service!
+                        Toast.makeText(MainActivity.this, "Enabled data collection", Toast.LENGTH_SHORT).show();
+                    } else {
+                        ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+                        List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
 
+                        Iterator<ActivityManager.RunningAppProcessInfo> iter = runningAppProcesses.iterator();
+
+                        while(iter.hasNext()){
+                            ActivityManager.RunningAppProcessInfo next = iter.next();
+
+                            String pricessName = getPackageName() + ":service";
+
+                            if(next.processName.equals(pricessName)){
+                                android.os.Process.killProcess(next.pid);
+                                break;
+                            }
+                        }
+                        Toast.makeText(MainActivity.this, "Disabled data collection", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
         }
@@ -514,6 +553,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String itemName = newItemName.getText().toString().replaceAll("^\\s+|\\s+$", "");
                 final String itemIp = newItemIP.getText().toString();
+
                 itemNameEmpty = true;
                 itemIpInvalid = true;
                 itemIpInUse = true;
@@ -548,7 +588,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 if (!itemNameEmpty && !itemIpInvalid && !itemIpInUse) {
-                    itemListViewModel.addItem(new Item(itemName, itemIp));
+                    itemListViewModel.addItem(new Item((byte) 0, itemName, itemIp));
                     dialog.dismiss();
                 }
             }
@@ -631,61 +671,12 @@ public class MainActivity extends AppCompatActivity {
         dialog.getWindow().setAttributes(layoutParams);
     }
 
+    @Override
+    public void addMonitorData(MonitorData monitorData) {
+        monitorDataListViewModel.addMonitorData(monitorData);
+    }
+
     public static boolean isValidIP(final String ip) {
         return IP_PATTERN.matcher(ip).matches();
-    }
-}
-
-class RequestTask extends AsyncTask<String, String, String> {
-    private int MODE = 0; //1 == title of song , 2 == volume
-    private boolean error = false; //If there was an error.
-    //The actual task which requests the data from the Arduino.
-    //Can be fired with: new RequestTask().execute(String url, String MODE(1 for main label, rest you can change/add));
-    @Override
-    protected String doInBackground(String... uri) {
-
-        MODE = Integer.parseInt(uri[1]);    //Set the mode.
-
-        String responseString;
-
-        try {
-            URLConnection connection = new URL(uri[0]).openConnection();
-
-            BufferedReader br = new BufferedReader(new InputStreamReader((connection.getInputStream())));
-            StringBuilder sb = new StringBuilder();
-            String output;
-            while ((output = br.readLine()) != null) {
-                sb.append(output);
-
-            }
-            responseString = sb.toString();
-        } catch (Exception e){
-            error = true;
-            responseString = e.getLocalizedMessage();
-        }
-
-        return responseString;
-    }
-
-    //After requesting the data.
-    @Override
-    protected void onPostExecute(String result) {
-        super.onPostExecute(result);
-
-        result = result.replace("HTTP/1.1 200 OKContent-type:text/html", "");
-        if (!error) {
-            if (MODE == 0){
-                // Toast.makeText(MainActivity.this, "Starting the Async went wrong", Toast.LENGTH_LONG).show();
-            }
-            else if (MODE == 1){
-
-            }
-            else if (MODE == 2){
-
-            }
-        } else {
-            // Toast.makeText(MainActivity.this, "Oops, something went wrong.",Toast.LENGTH_LONG).show();
-        }
-
     }
 }
