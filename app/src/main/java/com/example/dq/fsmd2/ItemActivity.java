@@ -127,9 +127,13 @@ public class ItemActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.export_data:
                 new ItemReport(this, this.item, monitorDataListViewModel.getMonitorDataModel()).toCsv();
+                return true;
+            case android.R.id.home:
+                onBackPressed();
+                return true;
         }
 
-        return true;
+        return false;
     }
 
 
@@ -176,6 +180,25 @@ public class ItemActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable List<MonitorData> monitorDatas) {
                 Log.d("DEBUG", "Delay: " + (new Date().getTime() - start.getTime()));
+                MonitorData lastMonitorData;
+                numDataPoints = 0;
+                latestTimestampData = 0;
+                VibrationData vibrationData;
+                colorFrom = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                if (monitorDatas != null) {
+                    numDataPoints = monitorDatas.size();
+                    if (numDataPoints > 0) {
+                        lastMonitorData = monitorDatas.get(0);
+                        latestTimestampData = lastMonitorData.getTimeData().getTime();
+                        vibrationData = lastMonitorData.getVibData();
+                        item.setStatus(Item.determineStatus(VibrationData.calculateVibrationMagnitude(vibrationData.getAvgXVibration(),
+                                vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
+                        itemListViewModel.updateItem(item);
+                        colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
+                    } else {
+                        colorTo = getResources().getColor(Item.getStatusColor(Item.NO_STATUS));
+                    }
+                }
                 dataRecyclerViewAdapter.setMonitorDatas(monitorDatas);
                 ColorDrawable[] colors = {new ColorDrawable(colorFrom), new ColorDrawable(colorTo)};
                 statusBackground = new TransitionDrawable(colors);
@@ -186,17 +209,14 @@ public class ItemActivity extends AppCompatActivity {
                     dataRecyclerView.scrollToPosition(0);
                 }
                 dataRecyclerViewAdapter.notifyItemRangeChanged(0, dataRecyclerViewAdapter.getItemCount());
-                Thread getNumDataThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        numDataPoints = monitorDataListViewModel.getNumMonitorDataFromItem(itemID);
-                        latestTimestampData = monitorDataListViewModel.getLatestTimestamp(itemID);
-                    }
-                });
-                getNumDataThread.start();
-                while (getNumDataThread.isAlive());
                 numData.setText(String.valueOf(numDataPoints + " data points"));
-                latestTimestamp.setText(formatter.format(new Date(latestTimestampData)));
+                if (numDataPoints > 0) {
+                    latestTimestamp.setText(formatter.format(new Date(latestTimestampData)));
+                    showDataVisible();
+                } else {
+                    latestTimestamp.setText("--");
+                    showNoData();
+                }
             }
         };
         monitorDataListViewModel = ViewModelProviders.of(this, new MonitorDataListViewModelFactory(this.getApplication(), itemID)).get(MonitorDataListViewModel.class);
@@ -248,7 +268,7 @@ public class ItemActivity extends AppCompatActivity {
 
                         try {
                             if (numData > 0) {
-                                newData = new MonitorData(random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50,
+                                newData = new MonitorData(itemID, random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50,
                                         random.nextFloat() * 50, random.nextFloat() * 50, random.nextFloat() * 50,
                                         random.nextFloat() * 90, random.nextFloat() * 180, new Date());
                                 VibrationData vibrationData = newData.getVibData();
@@ -257,7 +277,6 @@ public class ItemActivity extends AppCompatActivity {
                                         vibrationData.getAvgYVibration(), vibrationData.getAvgZVibration())));
                                 itemListViewModel.updateItem(item);
                                 colorTo = getResources().getColor(Item.getStatusColor(item.getStatus()));
-                                newData.setItemID(itemID);
                                 monitorDataListViewModel.addMonitorData(newData);
                                 numData--;
                             }

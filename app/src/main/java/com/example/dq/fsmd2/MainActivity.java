@@ -2,24 +2,33 @@ package com.example.dq.fsmd2;
 
 import android.Manifest;
 import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -51,21 +60,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity implements MonitorDataObserverService.Callback {
+
+    private BroadcastReceiver actionReceiver;
 
     private Intent serviceIntent;
     private ServiceConnection serviceConnection;
@@ -194,20 +195,6 @@ public class MainActivity extends AppCompatActivity implements MonitorDataObserv
         return true;
     }
 
-    /*
-    @Override
-    public boolean onOptionsItemSelected(final MenuItem item) {
-        int id = item.getItemId();
-
-        switch (id) {
-            case (R.id.action_add_item):
-                openAddItemManuallyPrompt();
-                break;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }*/
-
     @Override
     public void onResume() {
         super.onResume();
@@ -218,11 +205,66 @@ public class MainActivity extends AppCompatActivity implements MonitorDataObserv
 
         showSummary();
         setUpItemsSwipe();
+
+        boolean isChecked;
+        SharedPreferences preferences = getSharedPreferences("SETTINGS", MODE_PRIVATE);
+        isChecked = preferences.getBoolean("COLLECTING DATA", false);
+        collectingDataSwitch.setChecked(isChecked);
+
+        if (isChecked){
+            startService(serviceIntent); //Starting the service
+            bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE); //Binding to the service!
+            Toast.makeText(MainActivity.this, "Data collection enabled", Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent(MainActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent appMain = PendingIntent.getActivity(MainActivity.this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+            Intent stopCollectingIntent = new Intent();
+            stopCollectingIntent.setAction("STOP COLLECTING");
+            PendingIntent stopCollecting = PendingIntent.getBroadcast(MainActivity.this, 0, stopCollectingIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, "LOGGER CHANNEL")
+                    .setSmallIcon(R.drawable.ic_wifi_tethering_white)
+                    .setContentTitle("Collecting data")
+                    .setContentText("Currently accepting data from Wi-Fi hub.")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setStyle(new NotificationCompat.BigTextStyle())
+                    .setContentIntent(appMain)
+                    .addAction(android.R.drawable.ic_delete, "STOP COLLECTING", stopCollecting)
+                    .setAutoCancel(false)
+                    .setOngoing(true);
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MainActivity.this);
+            notificationManager.notify(1, builder.build());
+        } else {
+            ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
+
+            for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses){
+                String pricessName = getPackageName() + ":service";
+
+                if (processInfo.processName.equals(pricessName)) {
+                    android.os.Process.killProcess(processInfo.pid);
+                    break;
+                }
+            }
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MainActivity.this);
+            notificationManager.cancel(1);
+            Toast.makeText(MainActivity.this, "Data collection disabled", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        SharedPreferences.Editor editor = getSharedPreferences("SETTINGS", MODE_PRIVATE).edit();
+        editor.putBoolean("COLLECTING DATA", collectingDataSwitch.isChecked());
+        editor.apply();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(actionReceiver);
     }
 
     private void setUpItemsArea() {
@@ -400,6 +442,21 @@ public class MainActivity extends AppCompatActivity implements MonitorDataObserv
             }
         });
 
+        actionReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action != null && action.equals("STOP COLLECTING")) {
+                    collectingDataSwitch.setChecked(false);
+                }
+
+                Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+                context.sendBroadcast(it);
+            }
+        };
+
+        registerReceiver(actionReceiver, new IntentFilter("STOP COLLECTING"));
+
         NavigationView navDrawer = findViewById(R.id.nav_drawer);
         final Menu drawerMenu = navDrawer.getMenu();
 
@@ -414,24 +471,42 @@ public class MainActivity extends AppCompatActivity implements MonitorDataObserv
                     if (buttonView.isChecked()){
                         startService(serviceIntent); //Starting the service
                         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE); //Binding to the service!
-                        Toast.makeText(MainActivity.this, "Enabled data collection", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Data collection enabled", Toast.LENGTH_SHORT).show();
+
+                        Intent intent = new Intent(MainActivity.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        PendingIntent appMain = PendingIntent.getActivity(MainActivity.this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+                        Intent stopCollectingIntent = new Intent();
+                        stopCollectingIntent.setAction("STOP COLLECTING");
+                        PendingIntent stopCollecting = PendingIntent.getBroadcast(MainActivity.this, 0, stopCollectingIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                        NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, "LOGGER CHANNEL")
+                                .setSmallIcon(R.drawable.ic_wifi_tethering_white)
+                                .setContentTitle("Collecting data")
+                                .setContentText("Currently accepting data from Wi-Fi hub.")
+                                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                .setStyle(new NotificationCompat.BigTextStyle())
+                                .setContentIntent(appMain)
+                                .addAction(android.R.drawable.ic_delete, "STOP COLLECTING", stopCollecting)
+                                .setAutoCancel(false)
+                                .setOngoing(true);
+                        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MainActivity.this);
+                        notificationManager.notify(1, builder.build());
                     } else {
                         ActivityManager am = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
                         List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = am.getRunningAppProcesses();
 
-                        Iterator<ActivityManager.RunningAppProcessInfo> iter = runningAppProcesses.iterator();
-
-                        while(iter.hasNext()){
-                            ActivityManager.RunningAppProcessInfo next = iter.next();
-
+                        for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses){
                             String pricessName = getPackageName() + ":service";
 
-                            if(next.processName.equals(pricessName)){
-                                android.os.Process.killProcess(next.pid);
+                            if (processInfo.processName.equals(pricessName)) {
+                                android.os.Process.killProcess(processInfo.pid);
                                 break;
                             }
                         }
-                        Toast.makeText(MainActivity.this, "Disabled data collection", Toast.LENGTH_SHORT).show();
+                        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MainActivity.this);
+                        notificationManager.cancel(1);
+                        Toast.makeText(MainActivity.this, "Data collection disabled", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -588,7 +663,7 @@ public class MainActivity extends AppCompatActivity implements MonitorDataObserv
                     }
                 }
                 if (!itemNameEmpty && !itemIpInvalid && !itemIpInUse) {
-                    itemListViewModel.addItem(new Item((byte) 0, itemName, itemIp));
+                    itemListViewModel.addItem(new Item((byte) 1, itemName, itemIp));
                     dialog.dismiss();
                 }
             }
@@ -673,6 +748,11 @@ public class MainActivity extends AppCompatActivity implements MonitorDataObserv
 
     @Override
     public void addMonitorData(MonitorData monitorData) {
+        Log.d("DEBUG", "add monitor data");
+        byte itemID = monitorData.getItemID();
+        if (itemListViewModel.itemWithIdExists(itemID) == 0) {
+            itemListViewModel.addItem(new Item(itemID, "Item [Device ID " + String.valueOf(itemID) + "]", "0.0.0.0"));
+        }
         monitorDataListViewModel.addMonitorData(monitorData);
     }
 

@@ -76,14 +76,6 @@ public class ItemReport {
                     PrintWriter writer = new PrintWriter(file, "UTF-8");
                     SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss z MM-dd-yyyy", Locale.US);
 
-                    writer.println("Name," + item.getName());
-                    writer.println("IP," + item.getIp());
-                    writer.println("Time added," + formatter.format(item.getDateAdded()));
-                    writer.println();
-                    writer.println("Avg. Vibration Magnitude,Avg. X-Axis Vibration,Avg. Y-Axis Vibration,Avg. Z-Axis Vibration,"
-                            + "Peak Vibration Magnitude,Peak X-Axis Vibration,Peak Y-Axis Vibration,Peak Z-Axis Vibration,"
-                            + "Latitude,Longitude,Time");
-
                     Thread getMonitorDataListThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -92,6 +84,16 @@ public class ItemReport {
                     });
                     getMonitorDataListThread.start();
                     while (getMonitorDataListThread.isAlive()) ;
+
+                    writer.println("Name," + item.getName());
+                    writer.println("IP," + item.getIp());
+                    writer.println("Time added," + formatter.format(item.getDateAdded()));
+                    writer.println();
+                    writer.println("# data points," + String.valueOf(monitorDataList.size()));
+                    writer.println();
+                    writer.println("Avg. Vibration Magnitude (g),Avg. X-Axis Vibration (g),Avg. Y-Axis Vibration (g),Avg. Z-Axis Vibration (g),"
+                            + "Peak Vibration Magnitude (g),Peak X-Axis Vibration (g),Peak Y-Axis Vibration (g),Peak Z-Axis Vibration (g),"
+                            + "Latitude,Longitude,Time");
 
                     MonitorData monitorData;
                     VibrationData vibrationData;
@@ -136,7 +138,6 @@ public class ItemReport {
                             .setContentIntent(openExportedData)
                             .setAutoCancel(true);
                     NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-
                     notificationManager.notify(0, mBuilder.build());
                 } catch (Exception e) {
                     e.printStackTrace();

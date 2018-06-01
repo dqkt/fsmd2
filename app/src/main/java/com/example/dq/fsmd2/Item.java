@@ -126,6 +126,9 @@ public class Item implements Serializable {
         @Query("SELECT COUNT(1) FROM item WHERE ip = :ip")
         Integer itemIpInUse(String ip);
 
+        @Query("SELECT COUNT(1) FROM item WHERE itemID = :itemID")
+        Integer itemWithIdExists(byte itemID);
+
         @Query("SELECT * FROM item")
         LiveData<List<Item>> getAllItems();
 

@@ -45,10 +45,11 @@ public class MonitorData implements Serializable {
         isViewExpanded = false;
     }
 
-    public MonitorData(float peakXVib, float peakYVib, float peakZVib,
+    public MonitorData(byte itemID, float peakXVib, float peakYVib, float peakZVib,
                        float avgXVib, float avgYVib, float avgZVib,
                        float longitude, float latitude,
                        Date date) {
+        this.itemID = itemID;
         vibData = new VibrationData(peakXVib, peakYVib, peakZVib, avgXVib, avgYVib, avgZVib);
         posData = new PositionData(longitude, latitude);
         timeData = date;

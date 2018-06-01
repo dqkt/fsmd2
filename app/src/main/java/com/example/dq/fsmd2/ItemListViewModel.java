@@ -21,7 +21,8 @@ public class ItemListViewModel extends AndroidViewModel {
         this.itemList = loggerDatabase.itemModel().getAllItems();
     }
 
-    public LiveData<Item> getItem(int itemID) { return loggerDatabase.itemModel().getItem(itemID); }
+    public Integer itemWithIdExists(byte itemID) { return loggerDatabase.itemModel().itemWithIdExists(itemID); }
+    public LiveData<Item> getItem(byte itemID) { return loggerDatabase.itemModel().getItem(itemID); }
     public LiveData<List<Item>> getItemList() {
         return itemList;
     }
